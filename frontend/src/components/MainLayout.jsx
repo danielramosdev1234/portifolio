@@ -47,24 +47,37 @@ function MainLayout() {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
+  const handleMenuItemClick = (itemId) => {
+    setCurrentPage(itemId);
+    setSidebarOpen(false);
+  };
+
   return (
     <div className="main-layout">
       {/* Header */}
       <header className="main-header">
         <div className="header-left">
-          <button className="menu-toggle" onClick={toggleSidebar}>
+          <button
+            className="menu-toggle"
+            onClick={toggleSidebar}
+            type="button"
+            aria-label="Toggle menu"
+          >
             <span className="hamburger"></span>
             <span className="hamburger"></span>
             <span className="hamburger"></span>
           </button>
           <h1 className="app-title">🚀 Sistema de Gestão</h1>
         </div>
-        
+
         <div className="header-right">
           <div className="user-profile">
             <div className="user-avatar">A</div>
             <div className="user-info">
-              <span className="user-name">Admin</span>
               <span className="user-role">Administrador</span>
             </div>
           </div>
@@ -81,10 +94,8 @@ function MainLayout() {
                 <li key={item.id}>
                   <button
                     className={`nav-item ${currentPage === item.id ? 'nav-item-active' : ''}`}
-                    onClick={() => {
-                      setCurrentPage(item.id);
-                      setSidebarOpen(false);
-                    }}
+                    onClick={() => handleMenuItemClick(item.id)}
+                    type="button"
                   >
                     <span className="nav-icon">{item.icon}</span>
                     <span className="nav-label">{item.label}</span>
@@ -93,7 +104,7 @@ function MainLayout() {
               ))}
             </ul>
           </div>
-          
+
           <div className="sidebar-footer">
             <div className="version-info">
               <p>Versão 1.0.0</p>
@@ -104,7 +115,12 @@ function MainLayout() {
       </aside>
 
       {/* Overlay para mobile */}
-      {sidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
+      {sidebarOpen && (
+        <div
+          className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
+          onClick={closeSidebar}
+        ></div>
+      )}
 
       {/* Conteúdo Principal */}
       <main className="main-content">
