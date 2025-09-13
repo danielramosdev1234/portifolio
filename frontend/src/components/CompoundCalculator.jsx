@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './CompoundCalculator.css';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 
 const CompoundCalculator = () => {
   const [montante, setMontante] = useState('');
@@ -9,16 +12,19 @@ const CompoundCalculator = () => {
   const [prazo, setPrazo] = useState('');
   const [prazoAno, setPrazoAno] = useState('');
   const [ateVencer, setAteVencer] = useState('');
+  const [ipca, setIpca] = useState('');
+  const [selic, setSelic] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState({
     apIn: 0,
     apOut: 0,
     apJu: 0,
     apTot: 0,
+    finalIpca: 0,
+    finalSelic: 0,
     detailedRows: []
   });
 
-  // Formatador de números para formato brasileiro
   const formatToBRL = (number) => {
     const n = parseFloat(number) || 0;
     return n.toLocaleString('pt-BR', {
@@ -27,7 +33,6 @@ const CompoundCalculator = () => {
     });
   };
 
-  // Conversão da taxa anual para mensal
   useEffect(() => {
     if (taxaAno) {
       const taxaAnual = parseFloat(taxaAno);
@@ -36,7 +41,6 @@ const CompoundCalculator = () => {
     }
   }, [taxaAno]);
 
-  // Conversão do prazo
   useEffect(() => {
     if (prazoAno) {
       const prazoMeses = parseFloat(prazoAno) * 12;
@@ -55,60 +59,96 @@ const CompoundCalculator = () => {
     const aporteValue = parseFloat(aporte) || 0;
     const prazoValue = parseFloat(prazo) || 0;
     const taxaValue = parseFloat(taxa) / 100 || 0;
+    const ipcaValue = parseFloat(ipca) / 100 || 0;
+    const selicValue = parseFloat(selic) / 100 || 0;
 
-    if (!valorInicial || !prazoValue || !taxaValue) {
-      alert('Por favor, preencha todos os campos obrigatórios: Valor Inicial, Taxa e Prazo');
+    const ipcaMensal = Math.pow(1 + ipcaValue, 1/12) - 1;
+    const selicMensal = Math.pow(1 + selicValue, 1/12) - 1;
+
+    if (!valorInicial || !prazoValue || (!taxaValue && !ipcaValue && !selicValue)) {
+      alert('Preencha: Valor Inicial, Taxa, IPCA ou SELIC e o Prazo');
       return;
     }
 
-    // Cálculo Mensal
-    let acuPush = valorInicial;
+    // Simulação padrão (taxa informada)
+    let acuTaxa = valorInicial;
+    let jurosTaxa = 0;
+
+    // Simulação IPCA
+    let acuIpca = valorInicial;
+    let jurosIpca = 0;
+
+    // Simulação SELIC
+    let acuSelic = valorInicial;
+    let jurosSelic = 0;
+
     let detailedRows = [];
 
-    // Primeira linha (mês 0)
     detailedRows.push({
       mes: 0,
       aportes: formatToBRL(valorInicial),
       jurosNoMes: formatToBRL(0),
       jurosTotal: formatToBRL(0),
-      acumulado: formatToBRL(valorInicial)
+      acumulado: formatToBRL(valorInicial),
+      corrigidoIpca: formatToBRL(valorInicial),
+      comSelic: formatToBRL(valorInicial),
+      // valores numéricos para o gráfico
+        acumuladoNum: acuTaxa,
+        ipcaNum: acuIpca,
+        selicNum: acuSelic
     });
 
-    let aportePush = valorInicial;
-    let jurosPush = 0;
-
     for (let i = 1; i <= prazoValue; i++) {
-      // Aplica juros sobre o valor acumulado
-      const tempJuros = Math.floor((acuPush * taxaValue) * 100) / 100;
-      acuPush = Math.floor((acuPush + tempJuros + aporteValue) * 100) / 100;
+      const aporteAcumulado = valorInicial + aporteValue * i;
 
-      // Calcula acumulado de aportes
-      aportePush = valorInicial + aporteValue * i;
+      // --- Taxa informada
+      const tempJurosTaxa = acuTaxa * taxaValue;
+      acuTaxa = acuTaxa + tempJurosTaxa + aporteValue;
+      jurosTaxa = acuTaxa - aporteAcumulado;
 
-      // Calcula os juros acumulados
-      jurosPush = Math.floor((acuPush - aportePush) * 100) / 100;
+      // --- IPCA
+      const tempJurosIpca = acuIpca * ipcaMensal;
+      acuIpca = acuIpca + tempJurosIpca + aporteValue;
+      jurosIpca = acuIpca - aporteAcumulado;
 
-      // Adiciona linha à tabela detalhada
+      // --- SELIC
+      const tempJurosSelic = acuSelic * selicMensal;
+      acuSelic = acuSelic + tempJurosSelic + aporteValue;
+      jurosSelic = acuSelic - aporteAcumulado;
+
+        console.log(detailedRows);
+
+      // --- Adiciona linha detalhada
       detailedRows.push({
         mes: i,
-        aportes: formatToBRL(aportePush),
-        jurosNoMes: formatToBRL(tempJuros),
-        jurosTotal: formatToBRL(jurosPush),
-        acumulado: formatToBRL(acuPush)
+        aportes: formatToBRL(aporteAcumulado),
+        jurosNoMes: formatToBRL(tempJurosTaxa),
+        jurosTotal: formatToBRL(jurosTaxa),
+        acumulado: formatToBRL(acuTaxa),
+        corrigidoIpca: formatToBRL(acuIpca),
+        comSelic: formatToBRL(acuSelic),
+        acumuladoNum: acuTaxa,
+          ipcaNum: acuIpca,
+          selicNum: acuSelic
       });
+  console.log(detailedRows);
+
+
     }
 
-    // Define os resultados
     setResults({
       apIn: valorInicial,
       apOut: valorInicial + aporteValue * prazoValue,
-      apJu: jurosPush,
-      apTot: acuPush,
-      detailedRows: detailedRows
+      apJu: jurosTaxa,
+      apTot: acuTaxa,
+      finalIpca: acuIpca,
+      finalSelic: acuSelic,
+      detailedRows
     });
 
     setShowResults(true);
   };
+
 
   const handleReset = () => {
     setMontante('');
@@ -118,12 +158,16 @@ const CompoundCalculator = () => {
     setPrazo('');
     setPrazoAno('');
     setAteVencer('');
+    setIpca('');
+    setSelic('');
     setShowResults(false);
     setResults({
       apIn: 0,
       apOut: 0,
       apJu: 0,
       apTot: 0,
+      finalIpca: 0,
+      finalSelic: 0,
       detailedRows: []
     });
   };
@@ -137,7 +181,6 @@ const CompoundCalculator = () => {
         </div>
       </div>
 
-      {/* Formulário */}
       <section className="calculator-form-section">
         <div className="section-header">
           <h2 className="section-title">💰 Dados do Investimento</h2>
@@ -168,7 +211,7 @@ const CompoundCalculator = () => {
           </div>
 
           <div className="form-section">
-            <div className="section-subtitle">📈 Taxa de Juros</div>
+            <div className="section-subtitle">📈 Taxas</div>
             <div className="form-row">
               <div className="input-group">
                 <label>Taxa Mensal (%)</label>
@@ -186,9 +229,31 @@ const CompoundCalculator = () => {
                 <input
                   type="number"
                   step="0.01"
-                  placeholder="Ex: 6.17 (converte automaticamente)"
+                  placeholder="Ex: 6.17"
                   value={taxaAno}
                   onChange={(e) => setTaxaAno(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>IPCA Anual (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Ex: 4.5"
+                  value={ipca}
+                  onChange={(e) => setIpca(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>SELIC Anual (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Ex: 13.75"
+                  value={selic}
+                  onChange={(e) => setSelic(e.target.value)}
                   className="form-input"
                 />
               </div>
@@ -212,7 +277,7 @@ const CompoundCalculator = () => {
                 <label>Ou em Anos</label>
                 <input
                   type="number"
-                  placeholder="Ex: 1 (converte automaticamente)"
+                  placeholder="Ex: 1"
                   value={prazoAno}
                   onChange={(e) => setPrazoAno(e.target.value)}
                   className="form-input"
@@ -241,7 +306,6 @@ const CompoundCalculator = () => {
         </div>
       </section>
 
-      {/* Resultados */}
       {showResults && (
         <>
           <section className="results-summary-section">
@@ -281,39 +345,79 @@ const CompoundCalculator = () => {
                   <div className="result-label">Valor Final</div>
                 </div>
               </div>
+
+              <div className="result-card result-card-green">
+                <div className="result-icon">📉</div>
+                <div className="result-content">
+                  <div className="result-value">R$ {formatToBRL(results.finalIpca)}</div>
+                  <div className="result-label">Valor Real (corrigido IPCA)</div>
+                </div>
+              </div>
+
+              <div className="result-card result-card-purple">
+                <div className="result-icon">🏦</div>
+                <div className="result-content">
+                  <div className="result-value">R$ {formatToBRL(results.finalSelic)}</div>
+                  <div className="result-label">Valor com SELIC</div>
+                </div>
+              </div>
             </div>
           </section>
-
-          <section className="detailed-results-section">
+          <section className="results-chart-section">
             <div className="section-header">
-              <h2 className="section-title">📋 Evolução Mensal</h2>
+              <h2 className="section-title">📉 Evolução Gráfica</h2>
             </div>
 
-            <div className="table-container">
-              <table className="results-table">
-                <thead>
-                  <tr>
-                    <th>Mês</th>
-                    <th>Aportes Acumulados</th>
-                    <th>Juros do Mês</th>
-                    <th>Juros Acumulados</th>
-                    <th>Saldo Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.detailedRows.map((row, index) => (
-                    <tr key={index}>
-                      <td>{row.mes}</td>
-                      <td>R$ {row.aportes}</td>
-                      <td>R$ {row.jurosNoMes}</td>
-                      <td>R$ {row.jurosTotal}</td>
-                      <td className="highlight">R$ {row.acumulado}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={results.detailedRows}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis />
+                <Tooltip formatter={(value) =>
+                  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+                } />
+                <Legend />
+                <Line type="monotone" dataKey="acumuladoNum" stroke="#667eea" name="Taxa Informada" dot={false} />
+                <Line type="monotone" dataKey="ipcaNum" stroke="#48bb78" name="IPCA" dot={false} />
+                <Line type="monotone" dataKey="selicNum" stroke="#9f7aea" name="SELIC" dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </section>
+
+           <section className="detailed-results-section">
+                      <div className="section-header">
+                        <h2 className="section-title">📋 Evolução Mensal</h2>
+                      </div>
+
+                      <div className="table-container">
+                        <table className="results-table">
+                          <thead>
+                            <tr>
+                              <th>Mês</th>
+                              <th>Aportes Acumulados</th>
+                              <th>Juros do Mês</th>
+                              <th>Juros Acumulados</th>
+                              <th>Saldo Total</th>
+                              <th>Corrigido IPCA</th>
+                              <th>Projeção SELIC</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {results.detailedRows.map((row, index) => (
+                              <tr key={index}>
+                                <td>{row.mes}</td>
+                                <td>R$ {row.aportes}</td>
+                                <td>R$ {row.jurosNoMes}</td>
+                                <td>R$ {row.jurosTotal}</td>
+                                <td className="highlight">R$ {row.acumulado}</td>
+                                <td>R$ {row.corrigidoIpca}</td>
+                                <td>R$ {row.comSelic}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
         </>
       )}
     </div>
