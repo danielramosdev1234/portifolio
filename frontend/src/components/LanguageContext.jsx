@@ -19,8 +19,9 @@ const ptTexts = {
 
   // Menu
   menuTitle: "Menu Principal",
-  calculator: "Calculadora",
+  calculator: "Juros Compostos",
   retirement: "Calculadora de Aposentadoria",
+  fixedIncomeComparator: "Comparador de Renda Fixa",
   reports: "Relatórios",
   settings: "Configurações",
   comingSoon: "Em breve...",
@@ -109,8 +110,9 @@ const enTexts = {
 
   // Menu
   menuTitle: "Main Menu",
-  calculator: "Calculator",
+  calculator: "Compound Interest",
   retirement: "Retirement Calculator",
+  fixedIncomeComparator: "Fixed Income Comparator",
   reports: "Reports",
   settings: "Settings",
   comingSoon: "Coming soon...",

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import CompoundCalculator from "./CompoundCalculator";
+import FixedIncomeComparator from "./FixedIncomeComparator";
 import RetirementCalculator from "./RetirementCalculator";
 import { LanguageProvider, useLanguage } from './LanguageContext';
 import "./MainLayout.css";
@@ -22,6 +23,12 @@ const MainLayoutContent = () => {
       label: texts.retirement,
       icon: "🏖️",
       component: <RetirementCalculator />
+    },
+    {
+      id: "comparator",
+      label: texts.fixedIncomeComparator,
+      icon: "📊",
+      component: <FixedIncomeComparator />
     },
     {
       id: "reports",
@@ -75,75 +82,75 @@ const MainLayoutContent = () => {
         </div>
 
         <div className="header-right">
-          {/* Botão de troca de idioma */}
-          <button
-            className="language-toggle"
-            onClick={handleLanguageToggle}
-            type="button"
-            aria-label="Toggle language"
-            style={{
-              background: 'rgba(255,255,255,0.15)',
-              border: '2px solid rgba(255,255,255,0.2)',
-              borderRadius: '12px',
-              padding: '10px 16px',
-              color: 'white',
-              fontSize: '16px',
+          {/* Botão de troca de idioma estilo toggle switch */}
+          <div className="language-toggle-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              color: 'rgba(255,255,255,0.8)',
+              fontSize: '14px',
               fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              backdropFilter: 'blur(15px)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-              minWidth: '80px',
-              justifyContent: 'center'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(255,255,255,0.25)';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255,255,255,0.15)';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
-            }}
-          >
-            <span
-              className="language-flag"
+              opacity: language === 'en' ? 1 : 0.6,
+              transition: 'opacity 0.3s ease'
+            }}>
+              EN
+            </span>
+
+            <button
+              className="language-toggle"
+              onClick={handleLanguageToggle}
+              type="button"
+              aria-label="Toggle language"
               style={{
-                fontSize: '20px',
-                lineHeight: '1',
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                display: 'flex',
-                gap: '2px'
+                background: 'rgba(255,255,255,0.2)',
+                border: '2px solid rgba(255,255,255,0.3)',
+                borderRadius: '25px',
+                padding: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                width: '60px',
+                height: '32px',
+                position: 'relative',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.25)';
+                e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.2)';
+                e.target.style.boxShadow = 'none';
               }}
             >
-              {language === 'pt' ? (
-                <>
-                  <span>🇧🇷</span>
-                  <span>🇵🇹</span>
-                </>
-              ) : (
-                <>
-                  <span>🇺🇸</span>
-                  <span>🇬🇧</span>
-                </>
-              )}
+              <div
+                className="toggle-slider"
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #fff 0%, #f8f9fa 100%)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  transform: language === 'pt' ? 'translateX(28px)' : 'translateX(0)',
+                  transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  position: 'relative'
+                }}
+              >
+                {language === 'pt' ? '🇵🇹' : '🇬🇧'}
+              </div>
+            </button>
+
+            <span style={{
+              color: 'rgba(255,255,255,0.8)',
+              fontSize: '14px',
+              fontWeight: '600',
+              opacity: language === 'pt' ? 1 : 0.6,
+              transition: 'opacity 0.3s ease'
+            }}>
+              PT
             </span>
-            <span
-              className="language-code"
-              style={{
-                fontSize: '14px',
-                fontWeight: '700',
-                letterSpacing: '0.5px',
-                textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-              }}
-            >
-              {language === 'pt' ? 'PT' : 'EN'}
-            </span>
-          </button>
+          </div>
 
 
         </div>
