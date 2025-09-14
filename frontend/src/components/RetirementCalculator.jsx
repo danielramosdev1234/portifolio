@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import './RetirementCalculator.css';
+import { useLanguage } from './LanguageContext';
 
 const RetirementCalculator = () => {
+  const { texts, formatCurrency, formatNumber, isPortuguese } = useLanguage();
+
   const [monthlyIncome, setMonthlyIncome] = useState('');
   const [currentPatrimony, setCurrentPatrimony] = useState(''); // Patrimônio atual (já investido)
   const [targetPatrimony, setTargetPatrimony] = useState(''); // Patrimônio alvo para aposentadoria
@@ -13,52 +16,46 @@ const RetirementCalculator = () => {
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState({});
 
-  // Função para formatar como moeda brasileira
-  const formatCurrency = (value) => {
+  // Função para formatar como moeda usando o contexto
+  const formatCurrencyInput = (value) => {
     const numericValue = value.replace(/\D/g, '');
     if (!numericValue) return '';
     const number = parseFloat(numericValue) / 100;
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(number);
+    return formatCurrency(number);
   };
 
   // Função para converter moeda formatada para número
   const parseCurrencyToNumber = (value) => {
     if (!value) return 0;
-    const numericString = value
-      .replace(/R\$\s?/g, '')
-      .replace(/\./g, '')
-      .replace(',', '.');
-    return parseFloat(numericString) || 0;
+    if (isPortuguese) {
+      const numericString = value
+        .replace(/R\$\s?/g, '')
+        .replace(/\./g, '')
+        .replace(',', '.');
+      return parseFloat(numericString) || 0;
+    } else {
+      const numericString = value
+        .replace(/\$\s?/g, '')
+        .replace(/,/g, '');
+      return parseFloat(numericString) || 0;
+    }
   };
 
   // Handlers para campos monetários
   const handleMonthlyIncomeChange = (e) => {
-    setMonthlyIncome(formatCurrency(e.target.value));
+    setMonthlyIncome(formatCurrencyInput(e.target.value));
   };
 
   const handleCurrentPatrimonyChange = (e) => {
-    setCurrentPatrimony(formatCurrency(e.target.value));
+    setCurrentPatrimony(formatCurrencyInput(e.target.value));
   };
 
   const handleTargetPatrimonyChange = (e) => {
-    setTargetPatrimony(formatCurrency(e.target.value));
+    setTargetPatrimony(formatCurrencyInput(e.target.value));
   };
 
   const handleMonthlyExpensesChange = (e) => {
-    setMonthlyExpenses(formatCurrency(e.target.value));
-  };
-
-  const formatToBRL = (number) => {
-    const n = parseFloat(number) || 0;
-    return n.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+    setMonthlyExpenses(formatCurrencyInput(e.target.value));
   };
 
   const handleCalculate = () => {
@@ -72,12 +69,12 @@ const RetirementCalculator = () => {
     const expenses = parseCurrencyToNumber(monthlyExpenses);
 
     if (!income || !age || !percentage || !retAge || !returnRate) {
-      alert('Preencha todos os campos obrigatórios!');
+      alert(texts.requiredFields);
       return;
     }
 
     if (age >= retAge) {
-      alert('A idade de aposentadoria deve ser maior que a idade atual!');
+      alert(texts.ageError);
       return;
     }
 
@@ -157,23 +154,23 @@ const RetirementCalculator = () => {
     <div className="retirement-calculator">
       <div className="retirement-header">
         <div className="page-info">
-          <h1 className="page-title">🖏️ Simulador de Aposentadoria</h1>
-          <p className="page-subtitle">Planeje sua independência financeira e aposentadoria</p>
+          <h1 className="page-title">{texts.retirementTitle}</h1>
+          <p className="page-subtitle">{texts.retirementSubtitle}</p>
         </div>
       </div>
 
       <section className="retirement-form-section">
         <div className="section-header">
-          <h2 className="section-title">📊 Dados para Simulação</h2>
+          <h2 className="section-title">{texts.simulationData}</h2>
         </div>
 
         <div className="retirement-form-grid">
           <div className="form-column">
             <div className="input-group">
-              <label>Quanto você ganha por mês?</label>
+              <label>{texts.monthlyIncome}</label>
               <input
                 type="text"
-                placeholder="R$ 0,00"
+                placeholder={texts.placeholderMoney}
                 value={monthlyIncome}
                 onChange={handleMonthlyIncomeChange}
                 className="form-input"
@@ -181,10 +178,10 @@ const RetirementCalculator = () => {
             </div>
 
             <div className="input-group">
-              <label>Com quanto de patrimônio você quer se aposentar?</label>
+              <label>{texts.targetPatrimony}</label>
               <input
                 type="text"
-                placeholder="R$ 0,00"
+                placeholder={texts.placeholderMoney}
                 value={targetPatrimony}
                 onChange={handleTargetPatrimonyChange}
                 className="form-input"
@@ -192,7 +189,7 @@ const RetirementCalculator = () => {
             </div>
 
             <div className="input-group">
-              <label>Qual sua idade atual?</label>
+              <label>{texts.currentAge}</label>
               <input
                 type="number"
                 placeholder="30"
@@ -203,7 +200,7 @@ const RetirementCalculator = () => {
             </div>
 
             <div className="input-group">
-              <label>Sua rentabilidade total anual projetada (%)</label>
+              <label>{texts.annualReturn}</label>
               <input
                 type="number"
                 step="0.1"
@@ -217,10 +214,10 @@ const RetirementCalculator = () => {
 
           <div className="form-column">
             <div className="input-group">
-              <label>Quanto você já tem investido?</label>
+              <label>{texts.currentPatrimony}</label>
               <input
                 type="text"
-                placeholder="R$ 0,00"
+                placeholder={texts.placeholderMoney}
                 value={currentPatrimony}
                 onChange={handleCurrentPatrimonyChange}
                 className="form-input"
@@ -228,7 +225,7 @@ const RetirementCalculator = () => {
             </div>
 
             <div className="input-group">
-              <label>Quantos % da sua renda você investe?</label>
+              <label>{texts.incomePercentage}</label>
               <input
                 type="number"
                 step="1"
@@ -240,7 +237,7 @@ const RetirementCalculator = () => {
             </div>
 
             <div className="input-group">
-              <label>Com quantos anos você deseja se aposentar?</label>
+              <label>{texts.retirementAge}</label>
               <input
                 type="number"
                 placeholder="60"
@@ -251,10 +248,10 @@ const RetirementCalculator = () => {
             </div>
 
             <div className="input-group">
-              <label>Quanto você pretende gastar por mês aposentado?</label>
+              <label>{texts.monthlyExpenses}</label>
               <input
                 type="text"
-                placeholder="R$ 0,00"
+                placeholder={texts.placeholderMoney}
                 value={monthlyExpenses}
                 onChange={handleMonthlyExpensesChange}
                 className="form-input"
@@ -264,10 +261,10 @@ const RetirementCalculator = () => {
 
           <div className="form-actions">
             <button onClick={handleCalculate} className="btn btn-primary">
-              🧮 Calcular
+              {texts.calculate}
             </button>
             <button onClick={handleReset} className="btn btn-secondary">
-              🔄 Limpar
+              {texts.clear}
             </button>
           </div>
         </div>
@@ -276,82 +273,85 @@ const RetirementCalculator = () => {
       {showResults && (
         <section className="retirement-results-section">
           <div className="section-header">
-            <h2 className="section-title">📈 Resultado da Simulação</h2>
+            <h2 className="section-title">{texts.simulationResults}</h2>
           </div>
 
           <div className="retirement-results">
             <div className={`status-message ${results.goalAchieved ? 'status-success' : 'status-warning'}`}>
               {results.goalAchieved
-                ? `🎉 Parabéns! Você atingirá sua meta de aposentadoria com os investimentos atuais.`
-                : `⚠️ Infelizmente, com seus gastos atuais, você não deixará nada de herança.`
+                ? texts.goalAchieved
+                : texts.goalNotAchieved
               }
             </div>
 
             <div className="results-grid">
               <div className="result-card result-card-blue">
-                <h3>Você se aposentará com</h3>
+                <h3>{texts.retireWith}</h3>
                 <div className="result-value blue">
-                  R$ {formatToBRL(results.totalAccumulated)}
+                  {formatCurrency(results.totalAccumulated)}
                 </div>
                 <div className="result-subtitle">
-                  Aportando R$ {formatToBRL(parseCurrencyToNumber(monthlyIncome) * (parseFloat(incomePercentage) / 100))} por {results.yearsUntilRetirement} anos
+                  {isPortuguese
+                    ? `Aportando ${formatCurrency(parseCurrencyToNumber(monthlyIncome) * (parseFloat(incomePercentage) / 100))} por ${results.yearsUntilRetirement} anos`
+                    : `Contributing ${formatCurrency(parseCurrencyToNumber(monthlyIncome) * (parseFloat(incomePercentage) / 100))} for ${results.yearsUntilRetirement} years`
+                  }
                 </div>
               </div>
 
               <div className="result-card result-card-orange">
-                <h3>Deixará de herança</h3>
+                <h3>{texts.inheritance}</h3>
                 <div className="result-value orange">
-                  R$ {results.shortfall > 0 ? '0,00' : formatToBRL(results.totalAccumulated - results.neededCapital)}
+                  {formatCurrency(results.shortfall > 0 ? 0 : results.totalAccumulated - results.neededCapital)}
                 </div>
                 <div className="result-subtitle">
-                  Baseado numa expectativa média de 72 anos
+                  {texts.basedOnExpectancy}
                 </div>
               </div>
 
               <div className="result-card result-card-green">
-                <h3>Poderá gastar por mês</h3>
+                <h3>{texts.monthlySpending}</h3>
                 <div className="result-value green">
-                  R$ {formatToBRL(results.possibleMonthlyIncome)}
+                  {formatCurrency(results.possibleMonthlyIncome)}
                 </div>
                 <div className="result-subtitle">
-                  Para seu dinheiro nunca acabar
+                  {texts.forMoneyNeverEnd}
                 </div>
               </div>
 
               <div className="result-card result-card-purple">
-                <h3>Você passou da sua meta</h3>
+                <h3>{texts.exceededGoal}</h3>
                 <div className="result-value green">
-                  R$ {formatToBRL(results.goalAchieved ? results.totalAccumulated - results.neededCapital : 0)}
+                  {formatCurrency(results.goalAchieved ? results.totalAccumulated - results.neededCapital : 0)}
                 </div>
                 <div className="result-subtitle">
-                  Parabéns!
+                  {texts.congratulations}
                 </div>
               </div>
             </div>
 
             <div className="retirement-details">
-              <h4>📋 Detalhes da Simulação</h4>
+              <h4>{texts.simulationDetails}</h4>
               <div className="details-grid">
                 <div className="detail-item">
-                  <div className="detail-label">Anos até aposentadoria</div>
-                  <div className="detail-value">{results.yearsUntilRetirement} anos</div>
+                  <div className="detail-label">{texts.yearsToRetirement}</div>
+                  <div className="detail-value">{results.yearsUntilRetirement} {texts.years}</div>
                 </div>
                 <div className="detail-item">
-                  <div className="detail-label">Total investido no período</div>
-                  <div className="detail-value">R$ {formatToBRL(results.monthlyContribution)}</div>
+                  <div className="detail-label">{texts.totalInvestedPeriod}</div>
+                  <div className="detail-value">{formatCurrency(results.monthlyContribution)}</div>
                 </div>
                 <div className="detail-item">
-                  <div className="detail-label">Crescimento do patrimônio atual</div>
-                  <div className="detail-value">R$ {formatToBRL(results.currentPatrimonyGrowth)}</div>
+                  <div className="detail-label">{texts.currentPatrimonyGrowth}</div>
+                  <div className="detail-value">{formatCurrency(results.currentPatrimonyGrowth)}</div>
                 </div>
                 <div className="detail-item">
-                  <div className="detail-label">Valor dos aportes + juros</div>
-                  <div className="detail-value">R$ {formatToBRL(results.monthlyContributionsValue)}</div>
+                  <div className="detail-label">{texts.contributionsValue}</div>
+                  <div className="detail-value">{formatCurrency(results.monthlyContributionsValue)}</div>
                 </div>
                 {parseCurrencyToNumber(monthlyExpenses) > 0 && (
                   <div className="detail-item">
-                    <div className="detail-label">Anos de gastos cobertos</div>
-                    <div className="detail-value">{results.yearsOfExpenses.toFixed(1)} anos</div>
+                    <div className="detail-label">{texts.yearsCovered}</div>
+                    <div className="detail-value">{results.yearsOfExpenses.toFixed(1)} {texts.years}</div>
                   </div>
                 )}
               </div>

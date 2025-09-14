@@ -1,37 +1,39 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import CompoundCalculator from "./CompoundCalculator";
 import RetirementCalculator from "./RetirementCalculator";
+import { LanguageProvider, useLanguage } from './LanguageContext';
 import "./MainLayout.css";
 
-function MainLayout() {
+// Componente interno que usa o contexto de idioma
+const MainLayoutContent = () => {
   const [currentPage, setCurrentPage] = useState("calculator");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { texts, changeLanguage, language } = useLanguage();
 
   const menuItems = [
-
     {
       id: "calculator",
-      label: "Calculadora",
+      label: texts.calculator,
       icon: "🧮",
       component: <CompoundCalculator />
     },
-{
+    {
       id: "retirement",
-      label: "Calculadora de Aposentadoria",
+      label: texts.retirement,
       icon: "🏖️",
       component: <RetirementCalculator />
     },
     {
       id: "reports",
-      label: "Relatórios",
+      label: texts.reports,
       icon: "📈",
-      component: <div className="coming-soon">📊 Em breve...</div>
+      component: <div className="coming-soon">📊 {texts.comingSoon}</div>
     },
     {
       id: "settings",
-      label: "Configurações",
+      label: texts.settings,
       icon: "⚙️",
-      component: <div className="coming-soon">⚙️ Em breve...</div>
+      component: <div className="coming-soon">⚙️ {texts.comingSoon}</div>
     }
   ];
 
@@ -50,6 +52,10 @@ function MainLayout() {
     setSidebarOpen(false);
   };
 
+  const handleLanguageToggle = () => {
+    changeLanguage(language === 'pt' ? 'en' : 'pt');
+  };
+
   return (
     <div className="main-layout">
       {/* Header */}
@@ -65,17 +71,89 @@ function MainLayout() {
             <span className="hamburger"></span>
             <span className="hamburger"></span>
           </button>
-          <h1 className="app-title">🚀 Sistema de Gestão</h1>
+          <h1 className="app-title">{texts.appTitle}</h1>
         </div>
 
+        <div className="header-right">
+          {/* Botão de troca de idioma */}
+          <button
+            className="language-toggle"
+            onClick={handleLanguageToggle}
+            type="button"
+            aria-label="Toggle language"
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: '2px solid rgba(255,255,255,0.2)',
+              borderRadius: '12px',
+              padding: '10px 16px',
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              backdropFilter: 'blur(15px)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+              minWidth: '80px',
+              justifyContent: 'center'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.25)';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.15)';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+            }}
+          >
+            <span
+              className="language-flag"
+              style={{
+                fontSize: '20px',
+                lineHeight: '1',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                display: 'flex',
+                gap: '2px'
+              }}
+            >
+              {language === 'pt' ? (
+                <>
+                  <span>🇧🇷</span>
+                  <span>🇵🇹</span>
+                </>
+              ) : (
+                <>
+                  <span>🇺🇸</span>
+                  <span>🇬🇧</span>
+                </>
+              )}
+            </span>
+            <span
+              className="language-code"
+              style={{
+                fontSize: '14px',
+                fontWeight: '700',
+                letterSpacing: '0.5px',
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+              }}
+            >
+              {language === 'pt' ? 'PT' : 'EN'}
+            </span>
+          </button>
 
+
+        </div>
       </header>
 
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <nav className="sidebar-nav">
           <div className="nav-section">
-            <h3 className="nav-title">Menu Principal</h3>
+            <h3 className="nav-title">{texts.menuTitle}</h3>
             <ul className="nav-list">
               {menuItems.map(item => (
                 <li key={item.id}>
@@ -94,7 +172,7 @@ function MainLayout() {
 
           <div className="sidebar-footer">
             <div className="version-info">
-              <p>Versão 1.0.0</p>
+              <p>{texts.version}</p>
               <p>Spring Boot + React</p>
             </div>
           </div>
@@ -117,6 +195,15 @@ function MainLayout() {
       </main>
     </div>
   );
-}
+};
+
+// Componente principal que envolve tudo no LanguageProvider
+const MainLayout = () => {
+  return (
+    <LanguageProvider>
+      <MainLayoutContent />
+    </LanguageProvider>
+  );
+};
 
 export default MainLayout;
