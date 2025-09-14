@@ -1,26 +1,13 @@
 import { useState } from "react";
-import UserManager from "./UserManager";
-import Dashboard from "./Dashboard";
 import CompoundCalculator from "./CompoundCalculator";
 import "./MainLayout.css";
 
 function MainLayout() {
-  const [currentPage, setCurrentPage] = useState("dashboard");
+  const [currentPage, setCurrentPage] = useState("calculator");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const menuItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: "📊",
-      component: <Dashboard />
-    },
-    {
-      id: "users",
-      label: "Usuários",
-      icon: "👥",
-      component: <UserManager />
-    },
+
     {
       id: "calculator",
       label: "Calculadora",
@@ -74,14 +61,7 @@ function MainLayout() {
           <h1 className="app-title">🚀 Sistema de Gestão</h1>
         </div>
 
-        <div className="header-right">
-          <div className="user-profile">
-            <div className="user-avatar">A</div>
-            <div className="user-info">
-              <span className="user-role">Administrador</span>
-            </div>
-          </div>
-        </div>
+
       </header>
 
       {/* Sidebar */}
