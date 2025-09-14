@@ -483,7 +483,7 @@ const FixedIncomeComparator = () => {
                     {results.investment1?.liquidYield.toFixed(2)}%
                   </div>
                   <div style={{ color: '#718096', fontSize: '0.9em' }}>
-                    {isPortuguese ? 'Rentabilidade Líquida (a.a.)' : 'Net Return (p.a.)'}
+                    {isPortuguese ? 'Rentabilidade Líquida ' : 'Net Return '}
                   </div>
                 </div>
 
@@ -554,7 +554,7 @@ const FixedIncomeComparator = () => {
                     {results.investment2?.liquidYield.toFixed(2)}%
                   </div>
                   <div style={{ color: '#718096', fontSize: '0.9em' }}>
-                    {isPortuguese ? 'Rentabilidade Líquida (a.a.)' : 'Net Return (p.a.)'}
+                    {isPortuguese ? 'Rentabilidade Líquida ' : 'Net Return '}
                   </div>
                 </div>
 
@@ -603,7 +603,7 @@ const FixedIncomeComparator = () => {
               {isPortuguese ? (
                 <>
                   O investimento <strong>{results.winner === 1 ? results.investment1?.type : results.investment2?.type}</strong> apresenta
-                  melhor rentabilidade líquida, com <strong>{(results.winner === 1 ? results.investment1?.liquidYield : results.investment2?.liquidYield).toFixed(2)}%</strong> ao ano.
+                  melhor rentabilidade líquida, com <strong>{(results.winner === 1 ? results.investment1?.liquidYield : results.investment2?.liquidYield).toFixed(2)}%</strong>.
                   A diferença de rendimento é de <strong>{formatCurrency(Math.abs(results.investment1?.netReturn - results.investment2?.netReturn))}</strong>
                   {results.investment1?.period === results.investment2?.period ?
                     ` em ${results.investment1?.period} meses` :
@@ -613,7 +613,7 @@ const FixedIncomeComparator = () => {
               ) : (
                 <>
                   The <strong>{results.winner === 1 ? results.investment1?.type : results.investment2?.type}</strong> investment shows
-                  better net return, with <strong>{(results.winner === 1 ? results.investment1?.liquidYield : results.investment2?.liquidYield).toFixed(2)}%</strong> per year.
+                  better net return, with <strong>{(results.winner === 1 ? results.investment1?.liquidYield : results.investment2?.liquidYield).toFixed(2)}%</strong>.
                   The difference in earnings is <strong>{formatCurrency(Math.abs(results.investment1?.netReturn - results.investment2?.netReturn))}</strong>
                   {results.investment1?.period === results.investment2?.period ?
                     ` in ${results.investment1?.period} months` :
