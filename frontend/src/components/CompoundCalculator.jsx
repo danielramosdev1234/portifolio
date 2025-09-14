@@ -25,6 +25,48 @@ const CompoundCalculator = () => {
     detailedRows: []
   });
 
+  // Função para formatar como moeda brasileira
+  const formatCurrency = (value) => {
+    // Remove tudo que não é dígito
+    const numericValue = value.replace(/\D/g, '');
+
+    // Se vazio, retorna vazio
+    if (!numericValue) return '';
+
+    // Converte para número e divide por 100 (para considerar centavos)
+    const number = parseFloat(numericValue) / 100;
+
+    // Formata como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(number);
+  };
+
+  // Função para converter moeda formatada para número
+  const parseCurrencyToNumber = (value) => {
+    if (!value) return 0;
+    // Remove R$, espaços, pontos e substitui vírgula por ponto
+    const numericString = value
+      .replace(/R\$\s?/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+    return parseFloat(numericString) || 0;
+  };
+
+  // Handlers para os campos monetários
+  const handleMontanteChange = (e) => {
+    const formatted = formatCurrency(e.target.value);
+    setMontante(formatted);
+  };
+
+  const handleAporteChange = (e) => {
+    const formatted = formatCurrency(e.target.value);
+    setAporte(formatted);
+  };
+
   const formatToBRL = (number) => {
     const n = parseFloat(number) || 0;
     return n.toLocaleString('pt-BR', {
@@ -55,8 +97,8 @@ const CompoundCalculator = () => {
   }, [prazoAno, ateVencer]);
 
   const handleCalculate = () => {
-    const valorInicial = parseFloat(montante) || 0;
-    const aporteValue = parseFloat(aporte) || 0;
+    const valorInicial = parseCurrencyToNumber(montante);
+    const aporteValue = parseCurrencyToNumber(aporte);
     const prazoValue = parseFloat(prazo) || 0;
     const taxaValue = parseFloat(taxa) / 100 || 0;
     const ipcaValue = parseFloat(ipca) / 100 || 0;
@@ -116,8 +158,6 @@ const CompoundCalculator = () => {
       acuSelic = acuSelic + tempJurosSelic + aporteValue;
       jurosSelic = acuSelic - aporteAcumulado;
 
-        console.log(detailedRows);
-
       // --- Adiciona linha detalhada
       detailedRows.push({
         mes: i,
@@ -131,9 +171,6 @@ const CompoundCalculator = () => {
           ipcaNum: acuIpca,
           selicNum: acuSelic
       });
-  console.log(detailedRows);
-
-
     }
 
     setResults({
@@ -148,7 +185,6 @@ const CompoundCalculator = () => {
 
     setShowResults(true);
   };
-
 
   const handleReset = () => {
     setMontante('');
@@ -189,22 +225,22 @@ const CompoundCalculator = () => {
         <div className="form-grid">
           <div className="form-row">
             <div className="input-group">
-              <label>Valor Inicial (R$)</label>
+              <label>Valor Inicial</label>
               <input
-                type="number"
-                placeholder="Ex: 1000"
+                type="text"
+                placeholder="R$ 0,00"
                 value={montante}
-                onChange={(e) => setMontante(e.target.value)}
+                onChange={handleMontanteChange}
                 className="form-input"
               />
             </div>
             <div className="input-group">
-              <label>Aporte Mensal (R$)</label>
+              <label>Aporte Mensal</label>
               <input
-                type="number"
-                placeholder="Ex: 100 (opcional)"
+                type="text"
+                placeholder="R$ 0,00 (opcional)"
                 value={aporte}
-                onChange={(e) => setAporte(e.target.value)}
+                onChange={handleAporteChange}
                 className="form-input"
               />
             </div>

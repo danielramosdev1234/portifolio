@@ -1,5 +1,6 @@
 import { useState } from "react";
 import CompoundCalculator from "./CompoundCalculator";
+import RetirementCalculator from "./RetirementCalculator";
 import "./MainLayout.css";
 
 function MainLayout() {
@@ -13,6 +14,12 @@ function MainLayout() {
       label: "Calculadora",
       icon: "🧮",
       component: <CompoundCalculator />
+    },
+{
+      id: "retirement",
+      label: "Calculadora de Aposentadoria",
+      icon: "🏖️",
+      component: <RetirementCalculator />
     },
     {
       id: "reports",

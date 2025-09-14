@@ -1,0 +1,344 @@
+/* Retirement Calculator */
+.retirement-calculator {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  height: 100%;
+}
+
+/* Header */
+.retirement-header {
+  margin-bottom: 20px;
+}
+
+.page-info {
+  text-align: center;
+}
+
+.page-title {
+  font-size: 2.2em;
+  color: #2d3748;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.page-subtitle {
+  color: #718096;
+  font-size: 1.1em;
+}
+
+/* Seções */
+.retirement-form-section,
+.retirement-results-section {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.section-header {
+  margin-bottom: 25px;
+}
+
+.section-title {
+  font-size: 1.4em;
+  color: #2d3748;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Formulário */
+.retirement-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 8px;
+  font-size: 0.95em;
+}
+
+.form-input {
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder {
+  color: #a0aec0;
+}
+
+/* Botões */
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+  grid-column: 1 / -1;
+}
+
+.btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 160px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* Resultados */
+.retirement-results {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Mensagem de Status */
+.status-message {
+  padding: 20px;
+  border-radius: 16px;
+  text-align: center;
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.status-success {
+  background: linear-gradient(135deg, #48bb7815 0%, transparent 100%);
+  color: #38a169;
+  border: 2px solid #48bb78;
+}
+
+.status-warning {
+  background: linear-gradient(135deg, #ed864715 0%, transparent 100%);
+  color: #d69e2e;
+  border: 2px solid #ed8647;
+}
+
+/* Cards de Resultado */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.result-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.result-card-blue {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea05 0%, transparent 100%);
+}
+
+.result-card-green {
+  border-color: #48bb78;
+  background: linear-gradient(135deg, #48bb7805 0%, transparent 100%);
+}
+
+.result-card-purple {
+  border-color: #9f7aea;
+  background: linear-gradient(135deg, #9f7aea05 0%, transparent 100%);
+}
+
+.result-card-orange {
+  border-color: #ed8647;
+  background: linear-gradient(135deg, #ed864705 0%, transparent 100%);
+}
+
+.result-card h3 {
+  color: #2d3748;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.result-value {
+  font-size: 2.2em;
+  font-weight: 700;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.result-value.green {
+  color: #38a169;
+}
+
+.result-value.red {
+  color: #e53e3e;
+}
+
+.result-value.blue {
+  color: #667eea;
+}
+
+.result-value.orange {
+  color: #d69e2e;
+}
+
+.result-subtitle {
+  color: #718096;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+/* Detalhes */
+.retirement-details {
+  background: #f7fafc;
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 20px;
+}
+
+.retirement-details h4 {
+  color: #2d3748;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.detail-item {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+}
+
+.detail-label {
+  color: #4a5568;
+  font-size: 0.9em;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.detail-value {
+  color: #2d3748;
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .retirement-calculator {
+    gap: 20px;
+  }
+
+  .retirement-form-section,
+  .retirement-results-section {
+    padding: 20px;
+  }
+
+  .page-title {
+    font-size: 1.8em;
+  }
+
+  .retirement-form-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-value {
+    font-size: 1.8em;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn {
+    padding: 12px 24px;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.5em;
+  }
+
+  .result-value {
+    font-size: 1.6em;
+  }
+}
