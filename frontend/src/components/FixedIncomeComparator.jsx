@@ -67,13 +67,16 @@ const FixedIncomeComparator = () => {
   };
 
   // Função para calcular IOF (aplicado apenas nos primeiros 30 dias)
-  const calculateIOF = (period) => {
-    if (period <= 30) {
+  const calculateIOF = (periodInMonths) => {
+    // Converter meses para dias (aproximadamente)
+    const periodInDays = periodInMonths * 30;
+
+    if (periodInDays <= 30) {
       const iofTable = [
         96, 93, 90, 86, 83, 80, 76, 73, 70, 66, 63, 60, 56, 53, 50, 46, 43, 40, 36, 33,
         30, 26, 23, 20, 16, 13, 10, 6, 3, 0
       ];
-      const day = Math.min(Math.floor(period), 29);
+      const day = Math.min(Math.floor(periodInDays), 29);
       return iofTable[day] / 100 / 100; // Converter para decimal
     }
     return 0;
