@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const GhostBossGame = () => {
-  const [gameState, setGameState] = useState('playing'); // 'playing', 'paused', 'gameOver', 'levelUp'
+  const [gameState, setGameState] = useState('instructions'); // 'instructions', 'playing', 'paused', 'gameOver', 'levelUp'
   const [score, setScore] = useState(1291);
   const [phase, setPhase] = useState(1);
   const [level, setLevel] = useState(1);
@@ -476,7 +476,7 @@ const GhostBossGame = () => {
   };
 
   const resetGame = () => {
-    setGameState('playing');
+    setGameState('instructions');
     setScore(1291);
     setPhase(1);
     setLevel(1);
@@ -511,6 +511,10 @@ const GhostBossGame = () => {
       });
     }
     setGhosts(initialGhosts);
+  };
+
+  const startGame = () => {
+    setGameState('playing');
   };
 
   // MUDANÇA PRINCIPAL: Container adaptado para o MainLayout
@@ -610,11 +614,13 @@ const GhostBossGame = () => {
           border: '4px solid #6b7280',
           overflow: 'hidden',
           width: '700px',
-          height: '600px'
+          height: '600px',
+          cursor: gameState === 'instructions' ? 'pointer' : 'default'
         }}
+        onClick={gameState === 'instructions' ? startGame : undefined}
       >
-        {/* Boletos */}
-        {ghosts.map(ghost => (
+        {/* Boletos - só renderiza se não for tela de instruções */}
+        {gameState !== 'instructions' && ghosts.map(ghost => (
           <div
             key={ghost.id}
             style={{
@@ -641,8 +647,8 @@ const GhostBossGame = () => {
           </div>
         ))}
 
-        {/* Boss - só aparece se tiver vida */}
-        {boss.health > 0 && (
+        {/* Boss - só aparece se tiver vida e não for tela de instruções */}
+        {gameState !== 'instructions' && boss.health > 0 && (
           <div
             style={{
               position: 'absolute',
@@ -667,34 +673,36 @@ const GhostBossGame = () => {
           </div>
         )}
 
-        {/* Jogador - Executivo */}
-        <div
-          style={{
-            position: 'absolute',
-            left: player.x - 20,
-            top: player.y - 20,
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          <div style={{ fontSize: '32px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            🤵💼
+        {/* Jogador - Executivo - só aparece se não for tela de instruções */}
+        {gameState !== 'instructions' && (
+          <div
+            style={{
+              position: 'absolute',
+              left: player.x - 20,
+              top: player.y - 20,
+              transform: 'translate(-50%, -50%)'
+            }}
+          >
+            <div style={{ fontSize: '32px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              🤵💼
+            </div>
+            {/* Barra de vida do jogador */}
+            <div style={{ width: '48px', height: '8px', backgroundColor: '#7f1d1d', borderRadius: '4px', marginTop: '4px' }}>
+              <div
+                style={{
+                  height: '100%',
+                  backgroundColor: '#10b981',
+                  borderRadius: '4px',
+                  transition: 'width 0.3s',
+                  width: `${(player.health / player.maxHealth) * 100}%`
+                }}
+              />
+            </div>
           </div>
-          {/* Barra de vida do jogador */}
-          <div style={{ width: '48px', height: '8px', backgroundColor: '#7f1d1d', borderRadius: '4px', marginTop: '4px' }}>
-            <div
-              style={{
-                height: '100%',
-                backgroundColor: '#10b981',
-                borderRadius: '4px',
-                transition: 'width 0.3s',
-                width: `${(player.health / player.maxHealth) * 100}%`
-              }}
-            />
-          </div>
-        </div>
+        )}
 
-        {/* Projéteis do jogador - Dinheiro Voando */}
-        {projectiles.map(proj => (
+        {/* Projéteis do jogador - Dinheiro Voando - só aparecem se não for tela de instruções */}
+        {gameState !== 'instructions' && projectiles.map(proj => (
           <div
             key={proj.id}
             style={{
@@ -710,8 +718,8 @@ const GhostBossGame = () => {
           </div>
         ))}
 
-        {/* Projéteis do boss - X Vermelho */}
-        {bossProjectiles.map(proj => (
+        {/* Projéteis do boss - X Vermelho - só aparecem se não for tela de instruções */}
+        {gameState !== 'instructions' && bossProjectiles.map(proj => (
           <div
             key={proj.id}
             style={{
@@ -729,8 +737,8 @@ const GhostBossGame = () => {
           </div>
         ))}
 
-        {/* Textos de dano flutuantes */}
-        {damageTexts.map(text => (
+        {/* Textos de dano flutuantes - só aparecem se não for tela de instruções */}
+        {gameState !== 'instructions' && damageTexts.map(text => (
           <div
             key={text.id}
             style={{
@@ -756,6 +764,38 @@ const GhostBossGame = () => {
           </div>
         ))}
 
+        {/* Overlay de instruções */}
+        {gameState === 'instructions' && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer'
+          }}>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '32px', color: '#fbbf24', textAlign: 'center' }}>
+              🤵💼 BATALHA FINANCEIRA 💳📄
+            </div>
+            <div style={{
+              fontSize: '24px',
+              marginBottom: '32px',
+              textAlign: 'center',
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              padding: '16px 24px',
+              borderRadius: '12px',
+              border: '2px solid #3b82f6'
+            }}>
+              Use WASD ou setas para mover • Tiro automático
+            </div>
+            <div style={{ fontSize: '18px', color: '#9ca3af', textAlign: 'center' }}>
+              Clique para iniciar o jogo
+            </div>
+          </div>
+        )}
+
         {/* Overlay de level up */}
         {gameState === 'levelUp' && (
           <div style={{
@@ -768,7 +808,7 @@ const GhostBossGame = () => {
             justifyContent: 'center'
           }}>
             <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '24px', color: '#fbbf24' }}>PROMOÇÃO!</div>
-            <div style={{ fontSize: '20px', marginBottom: '32px', textAlign: 'center' }}>Escolha seu upgrade corporativo:</div>
+            <div style={{ fontSize: '20px', marginBottom: '32px', textAlign: 'center' }}>Escolha seu upgrade financeiro:</div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <button
@@ -791,7 +831,7 @@ const GhostBossGame = () => {
                   if (player.fireRate > 100) e.target.style.backgroundColor = '#2563eb';
                 }}
               >
-                ⚡ Agilidade Corporativa
+                ⚡ Agilidade Financeira
                 <div style={{ fontSize: '14px', opacity: 0.8 }}>
                   {player.fireRate <= 100 ? 'MAX' : `${player.fireRate}ms → ${Math.max(100, player.fireRate - 100)}ms`}
                 </div>
