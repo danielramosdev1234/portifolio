@@ -857,7 +857,7 @@ const GhostBossGame = () => {
                   if (player.projectileCount < 5) e.target.style.backgroundColor = '#059669';
                 }}
               >
-                🎯 Múltiplos Contratos
+                🎯 Múltiplas Rendas Passivas
                 <div style={{ fontSize: '14px', opacity: 0.8 }}>
                   {player.projectileCount >= 5 ? 'MÁXIMO ATINGIDO' : `${player.projectileCount} → ${player.projectileCount + 1} projéteis`}
                 </div>
@@ -957,7 +957,7 @@ const GhostBossGame = () => {
         <span>Boletos: {ghosts.length}</span>
         <span>Cartão-Chefe: {boss.health}/{boss.maxHealth}</span>
         <span>Saúde: {player.health}/{player.maxHealth}</span>
-        <span>Contratos: {player.projectileCount}</span>
+        <span>Rendas: {player.projectileCount}</span>
         <span>Dano: {player.damage}</span>
         <span>Vel.Tiro: {player.fireRate}ms</span>
       </div>
