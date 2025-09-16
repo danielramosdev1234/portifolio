@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import CompoundCalculator from "./CompoundCalculator";
 import FixedIncomeComparator from "./FixedIncomeComparator";
 import RetirementCalculator from "./RetirementCalculator";
+import GhostBossGame from "./Game";
 import { LanguageProvider, useLanguage } from './LanguageContext';
 import "./MainLayout.css";
 
@@ -29,6 +30,12 @@ const MainLayoutContent = () => {
       label: texts.fixedIncomeComparator,
       icon: "📊",
       component: <FixedIncomeComparator />
+    },
+    {
+      id: "game",
+      label: texts.game || (language === 'pt' ? 'Jogos' : 'Games'),
+      icon: "🎮",
+      component: <GhostBossGame />
     },
     {
       id: "reports",
@@ -151,8 +158,6 @@ const MainLayoutContent = () => {
               PT
             </span>
           </div>
-
-
         </div>
       </header>
 
