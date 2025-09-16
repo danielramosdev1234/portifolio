@@ -550,13 +550,13 @@ const GhostBossGame = () => {
           borderRadius: '8px',
           border: '2px solid #ef4444'
         }}>
-          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>CHEFE</div>
+          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>CARTÃO CHEFE</div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '24px' }}>👻</span>
+          <span style={{ fontSize: '24px' }}>📄</span>
           <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{score}</span>
-          <span style={{ fontSize: '24px' }}>🪙</span>
+          <span style={{ fontSize: '24px' }}>💰</span>
         </div>
       </div>
 
@@ -571,7 +571,7 @@ const GhostBossGame = () => {
       }}>
         <span>FASE {phase}</span>
         <span style={{ color: '#fbbf24' }}>NÍVEL {level}</span>
-        <span style={{ color: '#10b981' }}>EXP Fantasma: +{Math.floor(15 * (1 + (phase - 1) * 0.3))}</span>
+        <span style={{ color: '#10b981' }}>EXP Boleto: +{Math.floor(15 * (1 + (phase - 1) * 0.3))}</span>
       </div>
 
       {/* Barra de Experiência */}
@@ -613,7 +613,7 @@ const GhostBossGame = () => {
           height: '600px'
         }}
       >
-        {/* Fantasmas */}
+        {/* Boletos */}
         {ghosts.map(ghost => (
           <div
             key={ghost.id}
@@ -625,8 +625,8 @@ const GhostBossGame = () => {
               transform: 'translate(-50%, -50%)'
             }}
           >
-            👻
-            {/* Barra de vida do fantasma */}
+            📄
+            {/* Barra de vida do boleto */}
             <div style={{ width: '24px', height: '4px', backgroundColor: '#7f1d1d', borderRadius: '2px', marginTop: '4px' }}>
               <div
                 style={{
@@ -651,7 +651,7 @@ const GhostBossGame = () => {
               transform: 'translate(-50%, -50%)'
             }}
           >
-            <div style={{ fontSize: '48px' }}>👻</div>
+            <div style={{ fontSize: '48px' }}>💳</div>
             {/* Barra de vida do boss */}
             <div style={{ width: '64px', height: '8px', backgroundColor: '#7f1d1d', borderRadius: '4px', marginTop: '4px' }}>
               <div
@@ -667,7 +667,7 @@ const GhostBossGame = () => {
           </div>
         )}
 
-        {/* Jogador */}
+        {/* Jogador - Executivo */}
         <div
           style={{
             position: 'absolute',
@@ -676,7 +676,9 @@ const GhostBossGame = () => {
             transform: 'translate(-50%, -50%)'
           }}
         >
-          <div style={{ fontSize: '32px' }}>🧙‍♂️</div>
+          <div style={{ fontSize: '32px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            🤵💼
+          </div>
           {/* Barra de vida do jogador */}
           <div style={{ width: '48px', height: '8px', backgroundColor: '#7f1d1d', borderRadius: '4px', marginTop: '4px' }}>
             <div
@@ -691,36 +693,40 @@ const GhostBossGame = () => {
           </div>
         </div>
 
-        {/* Projéteis do jogador */}
+        {/* Projéteis do jogador - Dinheiro Voando */}
         {projectiles.map(proj => (
           <div
             key={proj.id}
             style={{
               position: 'absolute',
-              width: '8px',
-              height: '8px',
-              backgroundColor: '#22d3ee',
-              borderRadius: '50%',
-              left: proj.x - 4,
-              top: proj.y - 4
+              fontSize: '16px',
+              left: proj.x - 8,
+              top: proj.y - 8,
+              transform: 'translate(-50%, -50%)',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
             }}
-          />
+          >
+            💸
+          </div>
         ))}
 
-        {/* Projéteis do boss */}
+        {/* Projéteis do boss - X Vermelho */}
         {bossProjectiles.map(proj => (
           <div
             key={proj.id}
             style={{
               position: 'absolute',
-              width: '8px',
-              height: '8px',
-              backgroundColor: '#a855f7',
-              borderRadius: '50%',
-              left: proj.x - 4,
-              top: proj.y - 4
+              fontSize: '16px',
+              color: '#dc2626',
+              fontWeight: 'bold',
+              left: proj.x - 8,
+              top: proj.y - 8,
+              transform: 'translate(-50%, -50%)',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
             }}
-          />
+          >
+            ✖
+          </div>
         ))}
 
         {/* Textos de dano flutuantes */}
@@ -761,8 +767,8 @@ const GhostBossGame = () => {
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '24px', color: '#fbbf24' }}>LEVEL UP!</div>
-            <div style={{ fontSize: '20px', marginBottom: '32px', textAlign: 'center' }}>Escolha um upgrade:</div>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '24px', color: '#fbbf24' }}>PROMOÇÃO!</div>
+            <div style={{ fontSize: '20px', marginBottom: '32px', textAlign: 'center' }}>Escolha seu upgrade corporativo:</div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <button
@@ -785,7 +791,7 @@ const GhostBossGame = () => {
                   if (player.fireRate > 100) e.target.style.backgroundColor = '#2563eb';
                 }}
               >
-                ⚡ Velocidade de Tiro
+                ⚡ Agilidade Corporativa
                 <div style={{ fontSize: '14px', opacity: 0.8 }}>
                   {player.fireRate <= 100 ? 'MAX' : `${player.fireRate}ms → ${Math.max(100, player.fireRate - 100)}ms`}
                 </div>
@@ -811,7 +817,7 @@ const GhostBossGame = () => {
                   if (player.projectileCount < 5) e.target.style.backgroundColor = '#059669';
                 }}
               >
-                🎯 +1 Projétil
+                🎯 Múltiplos Contratos
                 <div style={{ fontSize: '14px', opacity: 0.8 }}>
                   {player.projectileCount >= 5 ? 'MÁXIMO ATINGIDO' : `${player.projectileCount} → ${player.projectileCount + 1} projéteis`}
                 </div>
@@ -832,7 +838,7 @@ const GhostBossGame = () => {
                 onMouseOver={(e) => e.target.style.backgroundColor = '#b91c1c'}
                 onMouseOut={(e) => e.target.style.backgroundColor = '#dc2626'}
               >
-                💥 Aumentar Dano
+                💼 Poder de Negociação
                 <div style={{ fontSize: '14px', opacity: 0.8 }}>
                   {player.damage} → {player.damage + 4} de dano
                 </div>
@@ -866,8 +872,8 @@ const GhostBossGame = () => {
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '16px', color: '#ef4444' }}>GAME OVER</div>
-            <div style={{ fontSize: '20px', marginBottom: '8px' }}>Pontuação Final: {score}</div>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '16px', color: '#ef4444' }}>FALÊNCIA!</div>
+            <div style={{ fontSize: '20px', marginBottom: '8px' }}>Capital Final: {score}</div>
             <div style={{ fontSize: '18px', marginBottom: '8px', color: '#fbbf24' }}>Fase Alcançada: {phase}</div>
             <div style={{ fontSize: '18px', marginBottom: '16px', color: '#10b981' }}>Nível Alcançado: {level}</div>
             <button
@@ -884,7 +890,7 @@ const GhostBossGame = () => {
               onMouseOver={(e) => e.target.style.backgroundColor = '#047857'}
               onMouseOut={(e) => e.target.style.backgroundColor = '#059669'}
             >
-              JOGAR NOVAMENTE
+              NOVO NEGÓCIO
             </button>
           </div>
         )}
@@ -897,8 +903,8 @@ const GhostBossGame = () => {
         fontSize: '14px',
         color: '#9ca3af'
       }}>
-        <p>Use WASD ou setas para mover • Tiro automático!</p>
-        <p>Derrote apenas o chefe para avançar de fase!</p>
+        <p>Use WASD ou setas para mover • Tiro automático corporativo!</p>
+        <p>Derrote apenas o cartão-chefe para expandir os negócios!</p>
       </div>
 
       {/* Stats do jogador */}
@@ -908,10 +914,10 @@ const GhostBossGame = () => {
         gap: '16px',
         fontSize: '14px'
       }}>
-        <span>Fantasmas: {ghosts.length}</span>
-        <span>Boss: {boss.health}/{boss.maxHealth}</span>
-        <span>Vida: {player.health}/{player.maxHealth}</span>
-        <span>Projéteis: {player.projectileCount}</span>
+        <span>Boletos: {ghosts.length}</span>
+        <span>Cartão-Chefe: {boss.health}/{boss.maxHealth}</span>
+        <span>Saúde: {player.health}/{player.maxHealth}</span>
+        <span>Contratos: {player.projectileCount}</span>
         <span>Dano: {player.damage}</span>
         <span>Vel.Tiro: {player.fireRate}ms</span>
       </div>
