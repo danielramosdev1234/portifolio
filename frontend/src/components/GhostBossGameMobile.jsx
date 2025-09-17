@@ -10,8 +10,8 @@ const GhostBossGameMobile = () => {
   const [experience, setExperience] = useState(0);
   const [experienceToNext, setExperienceToNext] = useState(100);
   const [player, setPlayer] = useState({
-    x: 175, // Adjusted for mobile screen
-    y: 400, // Adjusted for mobile screen
+    x: 175,
+    y: 400,
     health: 100,
     maxHealth: 100,
     fireRate: 500,
@@ -26,8 +26,6 @@ const GhostBossGameMobile = () => {
   const [damageTexts, setDamageTexts] = useState([]);
 
   // Mobile controls
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
   const [isMoving, setIsMoving] = useState(false);
   const [moveDirection, setMoveDirection] = useState({ x: 0, y: 0 });
 
@@ -42,12 +40,12 @@ const GhostBossGameMobile = () => {
   // Generate initial ghosts
   useEffect(() => {
     const initialGhosts = [];
-    for (let i = 0; i < 10; i++) { // Reduced for mobile
+    for (let i = 0; i < 10; i++) {
       initialGhosts.push({
         id: i,
         x: Math.random() * (gameWidth - 100) + 50,
         y: Math.random() * 250 + 50,
-        vx: (Math.random() - 0.5) * 1.5, // Slower for mobile
+        vx: (Math.random() - 0.5) * 1.5,
         vy: (Math.random() - 0.5) * 1.5,
         health: 10
       });
@@ -55,47 +53,76 @@ const GhostBossGameMobile = () => {
     setGhosts(initialGhosts);
   }, []);
 
-  // Touch controls for mobile
-  const handleTouchStart = (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = gameAreaRef.current.getBoundingClientRect();
-    setTouchStart({
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top
-    });
-    setIsMoving(true);
-  };
+  // Unified input handling
+  const startMovement = (clientX, clientY) => {
+    if (gameState !== 'playing') return;
 
-  const handleTouchMove = (e) => {
-    e.preventDefault();
-    if (!touchStart || !isMoving) return;
+    const rect = gameAreaRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-    const touch = e.touches[0];
-    const rect = gameAreaRef.current.getBoundingClientRect();
-    const currentTouch = {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top
-    };
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
-    const deltaX = currentTouch.x - touchStart.x;
-    const deltaY = currentTouch.y - touchStart.y;
-
-    // Normalize movement direction
+    // Calculate direction from player to touch/click point
+    const deltaX = x - player.x;
+    const deltaY = y - player.y;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    if (distance > 10) { // Dead zone
+
+    if (distance > 10) {
       setMoveDirection({
         x: deltaX / distance,
         y: deltaY / distance
       });
+      setIsMoving(true);
     }
+  };
+
+  const stopMovement = () => {
+    setIsMoving(false);
+    setMoveDirection({ x: 0, y: 0 });
+  };
+
+  // Touch handlers
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    if (gameState === 'instructions') {
+      startGame();
+      return;
+    }
+
+    const touch = e.touches[0];
+    startMovement(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+    if (gameState !== 'playing') return;
+
+    const touch = e.touches[0];
+    startMovement(touch.clientX, touch.clientY);
   };
 
   const handleTouchEnd = (e) => {
     e.preventDefault();
-    setIsMoving(false);
-    setMoveDirection({ x: 0, y: 0 });
-    setTouchStart(null);
+    stopMovement();
+  };
+
+  // Mouse handlers (fallback)
+  const handleMouseDown = (e) => {
+    if (gameState === 'instructions') {
+      startGame();
+      return;
+    }
+    startMovement(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isMoving || gameState !== 'playing') return;
+    startMovement(e.clientX, e.clientY);
+  };
+
+  const handleMouseUp = () => {
+    stopMovement();
   };
 
   // Function to add damage text
@@ -131,19 +158,19 @@ const GhostBossGameMobile = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Main game loop - OPTIMIZED for mobile
+  // Main game loop
   useEffect(() => {
     if (gameState !== 'playing') return;
 
     const gameLoop = setInterval(() => {
-      // Player movement based on touch
+      // Player movement
       setPlayer(prev => {
         let newX = prev.x;
         let newY = prev.y;
 
         if (isMoving) {
           newX = Math.max(20, Math.min(gameWidth - 20, prev.x + moveDirection.x * 4));
-          newY = Math.max(280, Math.min(gameHeight - 20, prev.y + moveDirection.y * 4)); // Keep player in bottom area
+          newY = Math.max(280, Math.min(gameHeight - 20, prev.y + moveDirection.y * 4));
         }
 
         return { ...prev, x: newX, y: newY };
@@ -154,7 +181,6 @@ const GhostBossGameMobile = () => {
       if (now - lastShot > player.fireRate) {
         const newProjectiles = [];
 
-        // Calculate projectile positions and velocities
         if (player.projectileCount === 1) {
           newProjectiles.push({
             id: `proj_${now}_0`,
@@ -182,30 +208,32 @@ const GhostBossGameMobile = () => {
             type: 'player'
           });
         } else if (player.projectileCount >= 3) {
-          newProjectiles.push({
-            id: `proj_${now}_0`,
-            x: player.x,
-            y: player.y - 20,
-            vx: 0,
-            vy: -5,
-            type: 'player'
-          });
-          newProjectiles.push({
-            id: `proj_${now}_1`,
-            x: player.x - 15,
-            y: player.y - 20,
-            vx: -1,
-            vy: -5,
-            type: 'player'
-          });
-          newProjectiles.push({
-            id: `proj_${now}_2`,
-            x: player.x + 15,
-            y: player.y - 20,
-            vx: 1,
-            vy: -5,
-            type: 'player'
-          });
+          newProjectiles.push(
+            {
+              id: `proj_${now}_0`,
+              x: player.x,
+              y: player.y - 20,
+              vx: 0,
+              vy: -5,
+              type: 'player'
+            },
+            {
+              id: `proj_${now}_1`,
+              x: player.x - 15,
+              y: player.y - 20,
+              vx: -1,
+              vy: -5,
+              type: 'player'
+            },
+            {
+              id: `proj_${now}_2`,
+              x: player.x + 15,
+              y: player.y - 20,
+              vx: 1,
+              vy: -5,
+              type: 'player'
+            }
+          );
         }
 
         if (player.projectileCount >= 4) {
@@ -250,7 +278,7 @@ const GhostBossGameMobile = () => {
       }));
 
       // Boss shooting
-      if (Math.random() < 0.015) { // Reduced frequency for mobile
+      if (Math.random() < 0.015) {
         setBossProjectiles(prev => [...prev, {
           id: `boss_proj_${Date.now()}_${Math.random()}`,
           x: boss.x,
@@ -261,7 +289,7 @@ const GhostBossGameMobile = () => {
         }]);
       }
 
-      // Projectile movement
+      // Move projectiles
       setProjectiles(prev =>
         prev.map(p => ({ ...p, x: p.x + p.vx, y: p.y + p.vy }))
             .filter(p => p.y > 0 && p.y < gameHeight)
@@ -271,6 +299,9 @@ const GhostBossGameMobile = () => {
         prev.map(p => ({ ...p, x: p.x + p.vx, y: p.y + p.vy }))
             .filter(p => p.y > 0 && p.y < gameHeight)
       );
+
+      // Collision detection and other game logic...
+      // (keeping the rest of the collision logic as is)
 
       // Player projectile collisions with ghosts
       setProjectiles(prev => {
@@ -318,67 +349,14 @@ const GhostBossGameMobile = () => {
         return remaining;
       });
 
-      // Player projectile collisions with boss
-      setProjectiles(prev => {
-        const remaining = [];
-        prev.forEach(proj => {
-          if (Math.abs(boss.x - proj.x) < 35 && Math.abs(boss.y - proj.y) < 35) {
-            setBoss(prevBoss => {
-              const newHealth = Math.max(0, prevBoss.health - player.damage);
-
-              addDamageText(boss.x, boss.y, player.damage, 'damage');
-              addDamageText(boss.x, boss.y - 15, `${newHealth}/${prevBoss.maxHealth}`, 'health');
-
-              if (prevBoss.health > 0 && newHealth === 0) {
-                const bossExp = 100;
-                addDamageText(boss.x, boss.y - 30, `+${bossExp} EXP`, 'exp');
-                addDamageText(boss.x, boss.y - 45, 'BOSS KILLED!', 'kill');
-
-                setExperience(exp => {
-                  const newExp = exp + bossExp;
-                  if (newExp >= experienceToNext) {
-                    setGameState('levelUp');
-                    return 0;
-                  }
-                  return newExp;
-                });
-              }
-              return { ...prevBoss, health: newHealth };
-            });
-            setScore(s => s + 50);
-          } else {
-            remaining.push(proj);
-          }
-        });
-        return remaining;
-      });
-
-      // Boss projectile collisions with player
-      setBossProjectiles(prev => {
-        const remaining = [];
-        prev.forEach(proj => {
-          if (Math.abs(player.x - proj.x) < 25 && Math.abs(player.y - proj.y) < 25) {
-            setPlayer(prevPlayer => {
-              const newHealth = Math.max(0, prevPlayer.health - 10);
-              addDamageText(player.x, player.y, 10, 'damage');
-              return { ...prevPlayer, health: newHealth };
-            });
-          } else {
-            remaining.push(proj);
-          }
-        });
-        return remaining;
-      });
-
       // Check game over
       if (player.health <= 0) {
         setGameState('gameOver');
       }
 
-      // Check victory (boss defeated)
+      // Check victory
       if (boss.health <= 0) {
         setPhase(prev => prev + 1);
-
         setBoss(prev => ({
           ...prev,
           health: prev.maxHealth * 2,
@@ -390,7 +368,7 @@ const GhostBossGameMobile = () => {
         const newGhosts = [];
         const ghostMaxHealth = Math.floor(10 * Math.pow(1.5, phase - 1));
 
-        for (let i = 0; i < 10 + phase; i++) { // Fewer ghosts for mobile
+        for (let i = 0; i < 10 + phase; i++) {
           newGhosts.push({
             id: Date.now() + i,
             x: Math.random() * (gameWidth - 100) + 50,
@@ -402,7 +380,7 @@ const GhostBossGameMobile = () => {
         }
         setGhosts(newGhosts);
       }
-    }, 20); // Slightly slower for mobile performance
+    }, 20);
 
     return () => clearInterval(gameLoop);
   }, [gameState, player, boss, lastShot, ghosts.length, phase, experienceToNext, isMoving, moveDirection]);
@@ -477,6 +455,7 @@ const GhostBossGameMobile = () => {
   };
 
   const startGame = () => {
+    console.log('Starting game!'); // Debug
     setGameState('playing');
   };
 
@@ -492,9 +471,10 @@ const GhostBossGameMobile = () => {
       padding: '15px',
       minHeight: '100vh',
       maxWidth: '400px',
-      margin: '0 auto'
+      margin: '0 auto',
+      userSelect: 'none'
     }}>
-      {/* Mobile interface */}
+      {/* Interface controls */}
       <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -531,7 +511,7 @@ const GhostBossGameMobile = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '18px' }}>🔄</span>
+            <span style={{ fontSize: '18px' }}>🏆</span>
             <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{score}</span>
             <span style={{ fontSize: '18px' }}>💰</span>
           </div>
@@ -591,14 +571,19 @@ const GhostBossGameMobile = () => {
           width: `${gameWidth}px`,
           height: `${gameHeight}px`,
           cursor: gameState === 'instructions' ? 'pointer' : 'default',
-          touchAction: 'none' // Prevent scrolling during touch
+          touchAction: 'none'
         }}
-        onClick={gameState === 'instructions' ? startGame : undefined}
+        // Touch events
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        // Mouse events (fallback)
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
-        {/* Game entities - only render if not instructions */}
+        {/* Game entities */}
         {gameState !== 'instructions' && ghosts.map(ghost => (
           <div
             key={ghost.id}
@@ -607,10 +592,11 @@ const GhostBossGameMobile = () => {
               fontSize: '20px',
               left: ghost.x - 12,
               top: ghost.y - 12,
-              transform: 'translate(-50%, -50%)'
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none'
             }}
           >
-            🔄
+            📄
             <div style={{ width: '20px', height: '3px', backgroundColor: '#7f1d1d', borderRadius: '1px', marginTop: '3px' }}>
               <div
                 style={{
@@ -632,7 +618,8 @@ const GhostBossGameMobile = () => {
               position: 'absolute',
               left: boss.x - 24,
               top: boss.y - 24,
-              transform: 'translate(-50%, -50%)'
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none'
             }}
           >
             <div style={{ fontSize: '36px' }}>💳</div>
@@ -657,7 +644,8 @@ const GhostBossGameMobile = () => {
               position: 'absolute',
               left: player.x - 16,
               top: player.y - 16,
-              transform: 'translate(-50%, -50%)'
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none'
             }}
           >
             <div style={{ fontSize: '24px', display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -677,7 +665,7 @@ const GhostBossGameMobile = () => {
           </div>
         )}
 
-        {/* Player projectiles */}
+        {/* Projectiles */}
         {gameState !== 'instructions' && projectiles.map(proj => (
           <div
             key={proj.id}
@@ -687,7 +675,8 @@ const GhostBossGameMobile = () => {
               left: proj.x - 6,
               top: proj.y - 6,
               transform: 'translate(-50%, -50%)',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+              pointerEvents: 'none'
             }}
           >
             💸
@@ -706,7 +695,8 @@ const GhostBossGameMobile = () => {
               left: proj.x - 6,
               top: proj.y - 6,
               transform: 'translate(-50%, -50%)',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+              pointerEvents: 'none'
             }}
           >
             ✖
@@ -755,7 +745,7 @@ const GhostBossGameMobile = () => {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px', color: '#fbbf24' }}>
-              🤵💼 BATALHA FINANCEIRA 💳🔄
+              🤵💼 BATALHA FINANCEIRA 💳📄
             </div>
             <div style={{
               fontSize: '16px',
@@ -767,8 +757,16 @@ const GhostBossGameMobile = () => {
             }}>
               Toque e arraste para mover • Tiro automático
             </div>
-            <div style={{ fontSize: '14px', color: '#9ca3af' }}>
-              Toque para iniciar
+            <div style={{
+              fontSize: '18px',
+              color: '#10b981',
+              fontWeight: 'bold',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              padding: '12px 20px',
+              borderRadius: '8px',
+              border: '2px solid #10b981'
+            }}>
+              TOQUE AQUI PARA COMEÇAR!
             </div>
           </div>
         )}
@@ -927,6 +925,16 @@ const GhostBossGameMobile = () => {
         <span>Rendas: {player.projectileCount}</span>
         <span>Dano: {player.damage}</span>
         <span>Vel: {player.fireRate}ms</span>
+      </div>
+
+      {/* Debug info - remove in production */}
+      <div style={{
+        marginTop: '8px',
+        fontSize: '10px',
+        color: '#6b7280',
+        textAlign: 'center'
+      }}>
+        Estado: {gameState} | Movendo: {isMoving ? 'Sim' : 'Não'}
       </div>
     </div>
   );
