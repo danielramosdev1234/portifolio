@@ -28,6 +28,7 @@ const GhostBossGame = () => {
 
   // Estados para controles mobile
   const [isMobile, setIsMobile] = useState(false);
+  const [gameSize, setGameSize] = useState({ width: 700, height: 600 });
   const [touchControls, setTouchControls] = useState({
     up: false,
     down: false,
@@ -37,18 +38,58 @@ const GhostBossGame = () => {
 
   const damageTextIdRef = useRef(0);
 
-  // Detectar se é dispositivo móvel
+  // Detectar se é dispositivo móvel e calcular tamanho do jogo
   useEffect(() => {
-    const checkMobile = () => {
+    const calculateGameSize = () => {
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-        || window.innerWidth <= 768;
+        || window.innerWidth <= 768 || 'ontouchstart' in window;
+
       setIsMobile(isMobileDevice);
+
+      if (isMobileDevice) {
+        // Calcular tamanho baseado na tela do dispositivo
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+
+        // Deixar espaço para controles (200px) e interface (150px)
+        const availableHeight = screenHeight - 350;
+        const availableWidth = screenWidth - 40; // 20px padding cada lado
+
+        // Manter proporção 7:6 (700x600)
+        let gameWidth = Math.min(availableWidth, 700);
+        let gameHeight = Math.min(availableHeight, (gameWidth * 600) / 700);
+
+        // Se altura ficou muito pequena, ajustar pela altura
+        if (gameHeight < 400) {
+          gameHeight = Math.max(400, availableHeight);
+          gameWidth = (gameHeight * 700) / 600;
+        }
+
+        setGameSize({
+          width: Math.floor(gameWidth),
+          height: Math.floor(gameHeight)
+        });
+
+        // Prevenir zoom no mobile
+        const viewport = document.querySelector('meta[name=viewport]');
+        if (viewport) {
+          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        }
+      } else {
+        setGameSize({ width: 700, height: 600 });
+      }
     };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
+    calculateGameSize();
+    window.addEventListener('resize', calculateGameSize);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(calculateGameSize, 100); // Delay para orientação se estabilizar
+    });
 
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => {
+      window.removeEventListener('resize', calculateGameSize);
+      window.removeEventListener('orientationchange', calculateGameSize);
+    };
   }, []);
 
   // Gerar fantasmas iniciais
@@ -58,7 +99,7 @@ const GhostBossGame = () => {
       initialGhosts.push({
         id: i,
         x: Math.random() * 650 + 50,
-        y: Math.random() * 300 + 50,
+        y: Math.random() * 270 + 50, // Ajustar área inicial
         vx: (Math.random() - 0.5) * 2,
         vy: (Math.random() - 0.5) * 2,
         health: 10
@@ -138,11 +179,17 @@ const GhostBossGame = () => {
         let newX = prev.x;
         let newY = prev.y;
 
+        // Calcular limites baseados no tamanho atual do jogo
+        const minX = 20;
+        const maxX = gameSize.width - 20;
+        const minY = Math.floor(gameSize.height * 0.58); // 58% da altura (área do jogador)
+        const maxY = gameSize.height - 20;
+
         // Controles de teclado
-        if (keys['ArrowLeft'] || keys['a'] || touchControls.left) newX = Math.max(20, prev.x - 5);
-        if (keys['ArrowRight'] || keys['d'] || touchControls.right) newX = Math.min(680, prev.x + 5);
-        if (keys['ArrowUp'] || keys['w'] || touchControls.up) newY = Math.max(350, prev.y - 5);
-        if (keys['ArrowDown'] || keys['s'] || touchControls.down) newY = Math.min(580, prev.y + 5);
+        if (keys['ArrowLeft'] || keys['a'] || touchControls.left) newX = Math.max(minX, prev.x - 5);
+        if (keys['ArrowRight'] || keys['d'] || touchControls.right) newX = Math.min(maxX, prev.x + 5);
+        if (keys['ArrowUp'] || keys['w'] || touchControls.up) newY = Math.max(minY, prev.y - 5);
+        if (keys['ArrowDown'] || keys['s'] || touchControls.down) newY = Math.min(maxY, prev.y + 5);
 
         return { ...prev, x: newX, y: newY };
       });
@@ -286,10 +333,10 @@ const GhostBossGame = () => {
       // Movimento dos fantasmas
       setGhosts(prev => prev.map(ghost => ({
         ...ghost,
-        x: Math.max(20, Math.min(680, ghost.x + ghost.vx)),
-        y: Math.max(50, Math.min(320, ghost.y + ghost.vy)),
-        vx: ghost.x <= 20 || ghost.x >= 680 ? -ghost.vx : ghost.vx,
-        vy: ghost.y <= 50 || ghost.y >= 320 ? -ghost.vy : ghost.vy
+        x: Math.max(20, Math.min(gameSize.width - 20, ghost.x + ghost.vx)),
+        y: Math.max(50, Math.min(Math.floor(gameSize.height * 0.53), ghost.y + ghost.vy)), // 53% da altura
+        vx: ghost.x <= 20 || ghost.x >= (gameSize.width - 20) ? -ghost.vx : ghost.vx,
+        vy: ghost.y <= 50 || ghost.y >= Math.floor(gameSize.height * 0.53) ? -ghost.vy : ghost.vy
       })));
 
       // Movimento do boss
@@ -313,12 +360,12 @@ const GhostBossGame = () => {
       // Movimento dos projéteis
       setProjectiles(prev =>
         prev.map(p => ({ ...p, x: p.x + p.vx, y: p.y + p.vy }))
-            .filter(p => p.y > 0 && p.y < 600)
+            .filter(p => p.y > 0 && p.y < gameSize.height && p.x > 0 && p.x < gameSize.width)
       );
 
       setBossProjectiles(prev =>
         prev.map(p => ({ ...p, x: p.x + p.vx, y: p.y + p.vy }))
-            .filter(p => p.y > 0 && p.y < 600)
+            .filter(p => p.y > 0 && p.y < gameSize.height && p.x > 0 && p.x < gameSize.width)
       );
 
       // Colisões magia do jogador com fantasmas
@@ -497,16 +544,32 @@ const GhostBossGame = () => {
     setLevel(1);
     setExperience(0);
     setExperienceToNext(100);
+
+    // Resetar jogador na posição correta baseada no tamanho da tela
+    const initialPlayerY = Math.floor(gameSize.height * 0.83); // 83% da altura
+    const initialPlayerX = Math.floor(gameSize.width / 2); // Centro horizontal
+
     setPlayer({
-      x: 350,
-      y: 500,
+      x: initialPlayerX,
+      y: initialPlayerY,
       health: 100,
       maxHealth: 100,
       fireRate: 500,
       damage: 8,
       projectileCount: 1
     });
-    setBoss({ x: 350, y: 150, health: 100, maxHealth: 100 });
+
+    // Resetar boss
+    const initialBossX = Math.floor(gameSize.width / 2); // Centro horizontal
+    const initialBossY = Math.floor(gameSize.height * 0.25); // 25% da altura
+
+    setBoss({
+      x: initialBossX,
+      y: initialBossY,
+      health: 100,
+      maxHealth: 100
+    });
+
     setProjectiles([]);
     setBossProjectiles([]);
     setDamageTexts([]);
@@ -518,8 +581,8 @@ const GhostBossGame = () => {
     for (let i = 0; i < 15; i++) {
       initialGhosts.push({
         id: i,
-        x: Math.random() * 650 + 50,
-        y: Math.random() * 300 + 50,
+        x: Math.random() * (gameSize.width - 100) + 50,
+        y: Math.random() * (Math.floor(gameSize.height * 0.45)) + 50, // Área dos fantasmas
         vx: (Math.random() - 0.5) * 2,
         vy: (Math.random() - 0.5) * 2,
         health: 10
@@ -536,125 +599,208 @@ const GhostBossGame = () => {
   const MobileControls = () => {
     if (!isMobile || gameState !== 'playing') return null;
 
-    const buttonStyle = {
-      position: 'absolute',
-      width: '60px',
-      height: '60px',
-      backgroundColor: 'rgba(59, 130, 246, 0.7)',
-      border: '2px solid #3b82f6',
+    const buttonStyle = (isPressed) => ({
+      width: '70px',
+      height: '70px',
+      backgroundColor: isPressed ? 'rgba(59, 130, 246, 0.9)' : 'rgba(59, 130, 246, 0.7)',
+      border: '3px solid #3b82f6',
       borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '24px',
+      fontSize: '28px',
       color: 'white',
       userSelect: 'none',
-      touchAction: 'manipulation'
+      touchAction: 'none',
+      cursor: 'pointer',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+      transition: 'all 0.1s'
+    });
+
+    const handleButtonPress = (direction) => {
+      handleTouchStart(direction);
+    };
+
+    const handleButtonRelease = (direction) => {
+      handleTouchEnd(direction);
     };
 
     return (
       <div style={{
         position: 'fixed',
         bottom: '20px',
-        left: '20px',
-        right: '20px',
-        height: '200px',
-        pointerEvents: 'none',
-        zIndex: 1000
+        left: '0',
+        right: '0',
+        height: '180px',
+        zIndex: 1000,
+        pointerEvents: 'none'
       }}>
-        {/* Botão para cima */}
-        <div
-          style={{
-            ...buttonStyle,
-            bottom: '120px',
+        {/* Container dos controles */}
+        <div style={{
+          position: 'relative',
+          width: '200px',
+          height: '180px',
+          margin: '0 auto',
+          pointerEvents: 'auto'
+        }}>
+          {/* Botão para cima */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '0px',
+              left: '65px',
+              ...buttonStyle(touchControls.up)
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleButtonPress('up');
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleButtonRelease('up');
+            }}
+            onTouchCancel={(e) => {
+              e.preventDefault();
+              handleButtonRelease('up');
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleButtonPress('up');
+            }}
+            onMouseUp={(e) => {
+              e.preventDefault();
+              handleButtonRelease('up');
+            }}
+            onMouseLeave={() => handleButtonRelease('up')}
+          >
+            ⬆️
+          </div>
+
+          {/* Botão para baixo */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '0px',
+              left: '65px',
+              ...buttonStyle(touchControls.down)
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleButtonPress('down');
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleButtonRelease('down');
+            }}
+            onTouchCancel={(e) => {
+              e.preventDefault();
+              handleButtonRelease('down');
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleButtonPress('down');
+            }}
+            onMouseUp={(e) => {
+              e.preventDefault();
+              handleButtonRelease('down');
+            }}
+            onMouseLeave={() => handleButtonRelease('down')}
+          >
+            ⬇️
+          </div>
+
+          {/* Botão para esquerda */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '55px',
+              left: '0px',
+              ...buttonStyle(touchControls.left)
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleButtonPress('left');
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleButtonRelease('left');
+            }}
+            onTouchCancel={(e) => {
+              e.preventDefault();
+              handleButtonRelease('left');
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleButtonPress('left');
+            }}
+            onMouseUp={(e) => {
+              e.preventDefault();
+              handleButtonRelease('left');
+            }}
+            onMouseLeave={() => handleButtonRelease('left')}
+          >
+            ⬅️
+          </div>
+
+          {/* Botão para direita */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '55px',
+              right: '0px',
+              ...buttonStyle(touchControls.right)
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleButtonPress('right');
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleButtonRelease('right');
+            }}
+            onTouchCancel={(e) => {
+              e.preventDefault();
+              handleButtonRelease('right');
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleButtonPress('right');
+            }}
+            onMouseUp={(e) => {
+              e.preventDefault();
+              handleButtonRelease('right');
+            }}
+            onMouseLeave={() => handleButtonRelease('right')}
+          >
+            ➡️
+          </div>
+        </div>
+
+        {/* Indicador visual dos controles ativos */}
+        {(touchControls.up || touchControls.down || touchControls.left || touchControls.right) && (
+          <div style={{
+            position: 'absolute',
+            top: '-40px',
             left: '50%',
             transform: 'translateX(-50%)',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handleTouchStart('up');
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            handleTouchEnd('up');
-          }}
-          onMouseDown={() => handleTouchStart('up')}
-          onMouseUp={() => handleTouchEnd('up')}
-          onMouseLeave={() => handleTouchEnd('up')}
-        >
-          ⬆️
-        </div>
-
-        {/* Botão para baixo */}
-        <div
-          style={{
-            ...buttonStyle,
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handleTouchStart('down');
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            handleTouchEnd('down');
-          }}
-          onMouseDown={() => handleTouchStart('down')}
-          onMouseUp={() => handleTouchEnd('down')}
-          onMouseLeave={() => handleTouchEnd('down')}
-        >
-          ⬇️
-        </div>
-
-        {/* Botão para esquerda */}
-        <div
-          style={{
-            ...buttonStyle,
-            bottom: '70px',
-            left: 'calc(50% - 80px)',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handleTouchStart('left');
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            handleTouchEnd('left');
-          }}
-          onMouseDown={() => handleTouchStart('left')}
-          onMouseUp={() => handleTouchEnd('left')}
-          onMouseLeave={() => handleTouchEnd('left')}
-        >
-          ⬅️
-        </div>
-
-        {/* Botão para direita */}
-        <div
-          style={{
-            ...buttonStyle,
-            bottom: '70px',
-            right: 'calc(50% - 80px)',
-            pointerEvents: 'auto'
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handleTouchStart('right');
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            handleTouchEnd('right');
-          }}
-          onMouseDown={() => handleTouchStart('right')}
-          onMouseUp={() => handleTouchEnd('right')}
-          onMouseLeave={() => handleTouchEnd('right')}
-        >
-          ➡️
-        </div>
+            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+            color: 'white',
+            padding: '4px 12px',
+            borderRadius: '16px',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}>
+            MOVENDO
+          </div>
+        )}
       </div>
     );
   };
@@ -764,9 +910,10 @@ const GhostBossGame = () => {
           backgroundColor: '#374151',
           border: '4px solid #6b7280',
           overflow: 'hidden',
-          width: isMobile ? Math.min(window.innerWidth - 40, 700) + 'px' : '700px',
-          height: isMobile ? Math.min(window.innerHeight * 0.6, 600) + 'px' : '600px',
-          cursor: gameState === 'instructions' ? 'pointer' : 'default'
+          width: `${gameSize.width}px`,
+          height: `${gameSize.height}px`,
+          cursor: gameState === 'instructions' ? 'pointer' : 'default',
+          marginBottom: isMobile ? '20px' : '0'
         }}
         onClick={gameState === 'instructions' ? startGame : undefined}
       >
