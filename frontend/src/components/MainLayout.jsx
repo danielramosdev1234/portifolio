@@ -3,6 +3,7 @@ import CompoundCalculator from "./CompoundCalculator";
 import FixedIncomeComparator from "./FixedIncomeComparator";
 import RetirementCalculator from "./RetirementCalculator";
 import GhostBossGame from "./Game";
+import GhostBossGameMobile from "./GhostBossGameMobile"; // Import the mobile version
 import { LanguageProvider, useLanguage } from './LanguageContext';
 import "./MainLayout.css";
 
@@ -10,7 +11,16 @@ import "./MainLayout.css";
 const MainLayoutContent = () => {
   const [currentPage, setCurrentPage] = useState("calculator");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobileMenuUsed, setIsMobileMenuUsed] = useState(false);
   const { texts, changeLanguage, language } = useLanguage();
+
+  const getGameComponent = () => {
+    // Check if we're in mobile view and the mobile menu was used
+    if (window.innerWidth <= 768 && isMobileMenuUsed) {
+      return <GhostBossGameMobile />;
+    }
+    return <GhostBossGame />;
+  };
 
   const menuItems = [
     {
@@ -35,7 +45,7 @@ const MainLayoutContent = () => {
       id: "game",
       label: texts.game || (language === 'pt' ? 'Jogos' : 'Games'),
       icon: "🎮",
-      component: <GhostBossGame />
+      component: getGameComponent()
     },
     {
       id: "reports",
@@ -61,14 +71,33 @@ const MainLayoutContent = () => {
     setSidebarOpen(false);
   };
 
-  const handleMenuItemClick = (itemId) => {
+  const handleMenuItemClick = (itemId, fromMobileMenu = false) => {
     setCurrentPage(itemId);
     setSidebarOpen(false);
+
+    // Track if the selection came from mobile menu
+    if (fromMobileMenu) {
+      setIsMobileMenuUsed(true);
+    } else {
+      setIsMobileMenuUsed(false);
+    }
   };
 
   const handleLanguageToggle = () => {
     changeLanguage(language === 'pt' ? 'en' : 'pt');
   };
+
+  // Listen for window resize to reset mobile menu flag
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setIsMobileMenuUsed(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="main-layout">
@@ -171,7 +200,11 @@ const MainLayoutContent = () => {
                 <li key={item.id}>
                   <button
                     className={`nav-item ${currentPage === item.id ? 'nav-item-active' : ''}`}
-                    onClick={() => handleMenuItemClick(item.id)}
+                    onClick={() => {
+                      // Check if we're in mobile view (sidebar is overlaid)
+                      const isMobile = window.innerWidth <= 768;
+                      handleMenuItemClick(item.id, isMobile);
+                    }}
                     type="button"
                   >
                     <span className="nav-icon">{item.icon}</span>
