@@ -13,10 +13,10 @@ const GhostBossGame = () => {
     x: 350,
     y: 500,
     health: 100,
-    maxHealth: 100, // HP máximo inicial
-    fireRate: 500, // ms entre tiros
+    maxHealth: 100,
+    fireRate: 500,
     damage: 8,
-    projectileCount: 1 // Número de projéteis (máximo 5)
+    projectileCount: 1
   });
   const [boss, setBoss] = useState({ x: 350, y: 150, health: 100, maxHealth: 100 });
   const [ghosts, setGhosts] = useState([]);
@@ -24,10 +24,32 @@ const GhostBossGame = () => {
   const [bossProjectiles, setBossProjectiles] = useState([]);
   const [keys, setKeys] = useState({});
   const [lastShot, setLastShot] = useState(0);
-  const [damageTexts, setDamageTexts] = useState([]); // Para mostrar os números de dano
+  const [damageTexts, setDamageTexts] = useState([]);
 
-  // Use a ref to keep track of unique IDs
+  // Estados para controles mobile
+  const [isMobile, setIsMobile] = useState(false);
+  const [touchControls, setTouchControls] = useState({
+    up: false,
+    down: false,
+    left: false,
+    right: false
+  });
+
   const damageTextIdRef = useRef(0);
+
+  // Detectar se é dispositivo móvel
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || window.innerWidth <= 768;
+      setIsMobile(isMobileDevice);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Gerar fantasmas iniciais
   useEffect(() => {
@@ -39,7 +61,7 @@ const GhostBossGame = () => {
         y: Math.random() * 300 + 50,
         vx: (Math.random() - 0.5) * 2,
         vy: (Math.random() - 0.5) * 2,
-        health: 10 // HP inicial dos fantasmas
+        health: 10
       });
     }
     setGhosts(initialGhosts);
@@ -47,21 +69,19 @@ const GhostBossGame = () => {
 
   // Função para adicionar texto de dano
   const addDamageText = (x, y, damage, type = 'damage') => {
-    // Generate truly unique ID using ref counter
     damageTextIdRef.current += 1;
     const newDamageText = {
       id: `damage_${damageTextIdRef.current}_${Date.now()}`,
       x: x,
       y: y,
       damage: damage,
-      type: type, // 'damage', 'exp', 'kill'
+      type: type,
       opacity: 1,
       offsetY: 0
     };
 
     setDamageTexts(prev => [...prev, newDamageText]);
 
-    // Remove o texto após animação
     setTimeout(() => {
       setDamageTexts(prev => prev.filter(text => text.id !== newDamageText.id));
     }, 1000);
@@ -99,32 +119,40 @@ const GhostBossGame = () => {
     };
   }, []);
 
-  // Loop principal do jogo - OTIMIZADO
+  // Controles touch para mobile
+  const handleTouchStart = (direction) => {
+    setTouchControls(prev => ({ ...prev, [direction]: true }));
+  };
+
+  const handleTouchEnd = (direction) => {
+    setTouchControls(prev => ({ ...prev, [direction]: false }));
+  };
+
+  // Loop principal do jogo
   useEffect(() => {
     if (gameState !== 'playing') return;
 
     const gameLoop = setInterval(() => {
-      // Movimento do jogador
+      // Movimento do jogador (combinando teclado e touch)
       setPlayer(prev => {
         let newX = prev.x;
         let newY = prev.y;
 
-        if (keys['ArrowLeft'] || keys['a']) newX = Math.max(20, prev.x - 5);
-        if (keys['ArrowRight'] || keys['d']) newX = Math.min(680, prev.x + 5);
-        if (keys['ArrowUp'] || keys['w']) newY = Math.max(350, prev.y - 5);
-        if (keys['ArrowDown'] || keys['s']) newY = Math.min(580, prev.y + 5);
+        // Controles de teclado
+        if (keys['ArrowLeft'] || keys['a'] || touchControls.left) newX = Math.max(20, prev.x - 5);
+        if (keys['ArrowRight'] || keys['d'] || touchControls.right) newX = Math.min(680, prev.x + 5);
+        if (keys['ArrowUp'] || keys['w'] || touchControls.up) newY = Math.max(350, prev.y - 5);
+        if (keys['ArrowDown'] || keys['s'] || touchControls.down) newY = Math.min(580, prev.y + 5);
 
         return { ...prev, x: newX, y: newY };
       });
 
-      // Tiro mágico automático do jogador
+      // Tiro automático do jogador
       const now = Date.now();
       if (now - lastShot > player.fireRate) {
         const newProjectiles = [];
 
-        // Calcular posições e velocidades dos projéteis
         if (player.projectileCount === 1) {
-          // 1 projétil - centro
           newProjectiles.push({
             id: `proj_${now}_0`,
             x: player.x,
@@ -134,7 +162,6 @@ const GhostBossGame = () => {
             type: 'player'
           });
         } else if (player.projectileCount === 2) {
-          // 2 projéteis - esquerda e direita
           newProjectiles.push({
             id: `proj_${now}_0`,
             x: player.x - 15,
@@ -152,7 +179,6 @@ const GhostBossGame = () => {
             type: 'player'
           });
         } else if (player.projectileCount === 3) {
-          // 3 projéteis - centro, esquerda e direita
           newProjectiles.push({
             id: `proj_${now}_0`,
             x: player.x,
@@ -178,7 +204,6 @@ const GhostBossGame = () => {
             type: 'player'
           });
         } else if (player.projectileCount === 4) {
-          // 4 projéteis - dois pares
           newProjectiles.push({
             id: `proj_${now}_0`,
             x: player.x - 10,
@@ -212,7 +237,6 @@ const GhostBossGame = () => {
             type: 'player'
           });
         } else if (player.projectileCount === 5) {
-          // 5 projéteis - máximo
           newProjectiles.push({
             id: `proj_${now}_0`,
             x: player.x,
@@ -258,6 +282,7 @@ const GhostBossGame = () => {
         setProjectiles(prev => [...prev, ...newProjectiles]);
         setLastShot(now);
       }
+
       // Movimento dos fantasmas
       setGhosts(prev => prev.map(ghost => ({
         ...ghost,
@@ -307,13 +332,11 @@ const GhostBossGame = () => {
                 hit = true;
                 const newHealth = ghost.health - player.damage;
 
-                // Mostrar dano
                 addDamageText(ghost.x, ghost.y, player.damage, 'damage');
 
                 if (newHealth <= 0) {
-                  // Fantasma morreu
                   const baseExp = 15;
-                  const phaseMultiplier = 1 + (phase - 1) * 0.3; // 30% mais exp por fase
+                  const phaseMultiplier = 1 + (phase - 1) * 0.3;
                   const expGained = Math.floor(baseExp * phaseMultiplier);
 
                   setScore(s => s + 10);
@@ -329,16 +352,15 @@ const GhostBossGame = () => {
                     return newExp;
                   });
 
-                  return null; // Remove fantasma
+                  return null;
                 } else {
-                  // Fantasma ainda vivo, mostrar HP restante
                   const ghostMaxHealth = Math.floor(10 * Math.pow(1.5, phase - 1));
                   addDamageText(ghost.x, ghost.y - 20, `${newHealth}/${ghostMaxHealth}`, 'health');
                   return { ...ghost, health: newHealth };
                 }
               }
               return ghost;
-            }).filter(Boolean); // Remove fantasmas mortos (null)
+            }).filter(Boolean);
           });
           if (!hit) remaining.push(proj);
         });
@@ -353,11 +375,9 @@ const GhostBossGame = () => {
             setBoss(prevBoss => {
               const newHealth = Math.max(0, prevBoss.health - player.damage);
 
-              // Mostrar dano no boss
               addDamageText(boss.x, boss.y, player.damage, 'damage');
               addDamageText(boss.x, boss.y - 20, `${newHealth}/${prevBoss.maxHealth}`, 'health');
 
-              // Só ganha experiência quando o boss morre
               if (prevBoss.health > 0 && newHealth === 0) {
                 const bossExp = 100;
                 addDamageText(boss.x, boss.y - 40, `+${bossExp} EXP`, 'exp');
@@ -404,12 +424,10 @@ const GhostBossGame = () => {
         setGameState('gameOver');
       }
 
-      // Verificar vitória (apenas boss morto)
+      // Verificar vitória
       if (boss.health <= 0) {
-        // Avançar para próxima fase
         setPhase(prev => prev + 1);
 
-        // Resetar para próxima fase - dobrar HP do boss
         setBoss(prev => ({
           ...prev,
           health: prev.maxHealth * 2,
@@ -418,7 +436,6 @@ const GhostBossGame = () => {
           y: 150
         }));
 
-        // Gerar novos fantasmas com HP baseado na fase (10 * 1.5^(fase-1))
         const newGhosts = [];
         const ghostMaxHealth = Math.floor(10 * Math.pow(1.5, phase - 1));
 
@@ -437,7 +454,7 @@ const GhostBossGame = () => {
     }, 16);
 
     return () => clearInterval(gameLoop);
-  }, [gameState, keys, player, boss, lastShot, ghosts.length, phase, experienceToNext]);
+  }, [gameState, keys, touchControls, player, boss, lastShot, ghosts.length, phase, experienceToNext]);
 
   const selectUpgrade = (upgrade) => {
     setPlayer(prev => {
@@ -457,14 +474,12 @@ const GhostBossGame = () => {
           break;
       }
 
-      // Ganhar 2 HP máximo e recuperar 5 HP a cada nível
       updatedPlayer.maxHealth = prev.maxHealth + 2;
       updatedPlayer.health = Math.min(updatedPlayer.maxHealth, prev.health + 5);
 
       return updatedPlayer;
     });
 
-    // Aumentar nível e experiência necessária em 10%
     setLevel(prev => prev + 1);
     setExperienceToNext(prev => Math.floor(prev * 1.1));
 
@@ -495,8 +510,8 @@ const GhostBossGame = () => {
     setProjectiles([]);
     setBossProjectiles([]);
     setDamageTexts([]);
+    setTouchControls({ up: false, down: false, left: false, right: false });
 
-    // Reset the damage text ID counter
     damageTextIdRef.current = 0;
 
     const initialGhosts = [];
@@ -507,7 +522,7 @@ const GhostBossGame = () => {
         y: Math.random() * 300 + 50,
         vx: (Math.random() - 0.5) * 2,
         vy: (Math.random() - 0.5) * 2,
-        health: 10 // HP inicial
+        health: 10
       });
     }
     setGhosts(initialGhosts);
@@ -517,7 +532,133 @@ const GhostBossGame = () => {
     setGameState('playing');
   };
 
-  // MUDANÇA PRINCIPAL: Container adaptado para o MainLayout
+  // Componente dos botões de controle móvel
+  const MobileControls = () => {
+    if (!isMobile || gameState !== 'playing') return null;
+
+    const buttonStyle = {
+      position: 'absolute',
+      width: '60px',
+      height: '60px',
+      backgroundColor: 'rgba(59, 130, 246, 0.7)',
+      border: '2px solid #3b82f6',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '24px',
+      color: 'white',
+      userSelect: 'none',
+      touchAction: 'manipulation'
+    };
+
+    return (
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '20px',
+        right: '20px',
+        height: '200px',
+        pointerEvents: 'none',
+        zIndex: 1000
+      }}>
+        {/* Botão para cima */}
+        <div
+          style={{
+            ...buttonStyle,
+            bottom: '120px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleTouchStart('up');
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            handleTouchEnd('up');
+          }}
+          onMouseDown={() => handleTouchStart('up')}
+          onMouseUp={() => handleTouchEnd('up')}
+          onMouseLeave={() => handleTouchEnd('up')}
+        >
+          ⬆️
+        </div>
+
+        {/* Botão para baixo */}
+        <div
+          style={{
+            ...buttonStyle,
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleTouchStart('down');
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            handleTouchEnd('down');
+          }}
+          onMouseDown={() => handleTouchStart('down')}
+          onMouseUp={() => handleTouchEnd('down')}
+          onMouseLeave={() => handleTouchEnd('down')}
+        >
+          ⬇️
+        </div>
+
+        {/* Botão para esquerda */}
+        <div
+          style={{
+            ...buttonStyle,
+            bottom: '70px',
+            left: 'calc(50% - 80px)',
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleTouchStart('left');
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            handleTouchEnd('left');
+          }}
+          onMouseDown={() => handleTouchStart('left')}
+          onMouseUp={() => handleTouchEnd('left')}
+          onMouseLeave={() => handleTouchEnd('left')}
+        >
+          ⬅️
+        </div>
+
+        {/* Botão para direita */}
+        <div
+          style={{
+            ...buttonStyle,
+            bottom: '70px',
+            right: 'calc(50% - 80px)',
+            pointerEvents: 'auto'
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleTouchStart('right');
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            handleTouchEnd('right');
+          }}
+          onMouseDown={() => handleTouchStart('right')}
+          onMouseUp={() => handleTouchEnd('right')}
+          onMouseLeave={() => handleTouchEnd('right')}
+        >
+          ➡️
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{
       display: 'flex',
@@ -527,20 +668,29 @@ const GhostBossGame = () => {
       color: 'white',
       backgroundColor: '#1a202c',
       borderRadius: '20px',
-      padding: '20px',
-      minHeight: '80vh'
+      padding: isMobile ? '10px' : '20px',
+      minHeight: '80vh',
+      position: 'relative'
     }}>
       {/* Interface superior */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isMobile ? '8px' : '16px',
+        marginBottom: '16px',
+        flexWrap: 'wrap',
+        justifyContent: 'center'
+      }}>
         <button
           onClick={togglePause}
           style={{
             backgroundColor: '#3182ce',
             color: 'white',
-            padding: '8px 16px',
+            padding: isMobile ? '6px 12px' : '8px 16px',
             borderRadius: '8px',
             border: 'none',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            fontSize: isMobile ? '14px' : '16px'
           }}
           onMouseOver={(e) => e.target.style.backgroundColor = '#2c5aa0'}
           onMouseOut={(e) => e.target.style.backgroundColor = '#3182ce'}
@@ -550,28 +700,29 @@ const GhostBossGame = () => {
 
         <div style={{
           backgroundColor: '#dc2626',
-          padding: '8px 24px',
+          padding: isMobile ? '6px 12px' : '8px 24px',
           borderRadius: '8px',
           border: '2px solid #ef4444'
         }}>
-          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>CARTÃO CHEFE</div>
+          <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 'bold' }}>CARTÃO CHEFE</div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '24px' }}>📄</span>
-          <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{score}</span>
-          <span style={{ fontSize: '24px' }}>💰</span>
+          <span style={{ fontSize: isMobile ? '20px' : '24px' }}>💰</span>
+          <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 'bold' }}>{score}</span>
+          <span style={{ fontSize: isMobile ? '20px' : '24px' }}>💰</span>
         </div>
       </div>
 
       <div style={{
         backgroundColor: 'black',
-        padding: '8px 16px',
+        padding: isMobile ? '6px 12px' : '8px 16px',
         borderRadius: '8px',
         marginBottom: '8px',
         display: 'flex',
         alignItems: 'center',
-        gap: '16px'
+        gap: isMobile ? '8px' : '16px',
+        fontSize: isMobile ? '12px' : '14px'
       }}>
         <span>FASE {phase}</span>
         <span style={{ color: '#fbbf24' }}>NÍVEL {level}</span>
@@ -580,7 +731,7 @@ const GhostBossGame = () => {
 
       {/* Barra de Experiência */}
       <div style={{
-        width: '320px',
+        width: isMobile ? '280px' : '320px',
         height: '16px',
         backgroundColor: '#374151',
         borderRadius: '9999px',
@@ -613,26 +764,25 @@ const GhostBossGame = () => {
           backgroundColor: '#374151',
           border: '4px solid #6b7280',
           overflow: 'hidden',
-          width: '700px',
-          height: '600px',
+          width: isMobile ? Math.min(window.innerWidth - 40, 700) + 'px' : '700px',
+          height: isMobile ? Math.min(window.innerHeight * 0.6, 600) + 'px' : '600px',
           cursor: gameState === 'instructions' ? 'pointer' : 'default'
         }}
         onClick={gameState === 'instructions' ? startGame : undefined}
       >
-        {/* Boletos - só renderiza se não for tela de instruções */}
+        {/* Boletos */}
         {gameState !== 'instructions' && ghosts.map(ghost => (
           <div
             key={ghost.id}
             style={{
               position: 'absolute',
-              fontSize: '24px',
+              fontSize: isMobile ? '20px' : '24px',
               left: ghost.x - 15,
               top: ghost.y - 15,
               transform: 'translate(-50%, -50%)'
             }}
           >
             📄
-            {/* Barra de vida do boleto */}
             <div style={{ width: '24px', height: '4px', backgroundColor: '#7f1d1d', borderRadius: '2px', marginTop: '4px' }}>
               <div
                 style={{
@@ -647,7 +797,7 @@ const GhostBossGame = () => {
           </div>
         ))}
 
-        {/* Boss - só aparece se tiver vida e não for tela de instruções */}
+        {/* Boss */}
         {gameState !== 'instructions' && boss.health > 0 && (
           <div
             style={{
@@ -657,8 +807,7 @@ const GhostBossGame = () => {
               transform: 'translate(-50%, -50%)'
             }}
           >
-            <div style={{ fontSize: '48px' }}>💳</div>
-            {/* Barra de vida do boss */}
+            <div style={{ fontSize: isMobile ? '40px' : '48px' }}>💳</div>
             <div style={{ width: '64px', height: '8px', backgroundColor: '#7f1d1d', borderRadius: '4px', marginTop: '4px' }}>
               <div
                 style={{
@@ -673,7 +822,7 @@ const GhostBossGame = () => {
           </div>
         )}
 
-        {/* Jogador - Executivo - só aparece se não for tela de instruções */}
+        {/* Jogador */}
         {gameState !== 'instructions' && (
           <div
             style={{
@@ -683,10 +832,9 @@ const GhostBossGame = () => {
               transform: 'translate(-50%, -50%)'
             }}
           >
-            <div style={{ fontSize: '32px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: isMobile ? '28px' : '32px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               🤵💼
             </div>
-            {/* Barra de vida do jogador */}
             <div style={{ width: '48px', height: '8px', backgroundColor: '#7f1d1d', borderRadius: '4px', marginTop: '4px' }}>
               <div
                 style={{
@@ -701,7 +849,7 @@ const GhostBossGame = () => {
           </div>
         )}
 
-        {/* Projéteis do jogador - Dinheiro Voando - só aparecem se não for tela de instruções */}
+        {/* Projéteis do jogador */}
         {gameState !== 'instructions' && projectiles.map(proj => (
           <div
             key={proj.id}
@@ -718,7 +866,7 @@ const GhostBossGame = () => {
           </div>
         ))}
 
-        {/* Projéteis do boss - X Vermelho - só aparecem se não for tela de instruções */}
+        {/* Projéteis do boss */}
         {gameState !== 'instructions' && bossProjectiles.map(proj => (
           <div
             key={proj.id}
@@ -737,7 +885,7 @@ const GhostBossGame = () => {
           </div>
         ))}
 
-        {/* Textos de dano flutuantes - só aparecem se não for tela de instruções */}
+        {/* Textos de dano flutuantes */}
         {gameState !== 'instructions' && damageTexts.map(text => (
           <div
             key={text.id}
@@ -774,13 +922,20 @@ const GhostBossGame = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            padding: '20px'
           }}>
-            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '32px', color: '#fbbf24', textAlign: 'center' }}>
+            <div style={{
+              fontSize: isMobile ? '32px' : '48px',
+              fontWeight: 'bold',
+              marginBottom: '32px',
+              color: '#fbbf24',
+              textAlign: 'center'
+            }}>
               🤵💼 BATALHA FINANCEIRA 💳📄
             </div>
             <div style={{
-              fontSize: '24px',
+              fontSize: isMobile ? '18px' : '24px',
               marginBottom: '32px',
               textAlign: 'center',
               backgroundColor: 'rgba(59, 130, 246, 0.2)',
@@ -788,10 +943,10 @@ const GhostBossGame = () => {
               borderRadius: '12px',
               border: '2px solid #3b82f6'
             }}>
-              Use WASD ou setas para mover • Tiro automático
+              {isMobile ? 'Use os controles na tela • Tiro automático' : 'Use WASD ou setas para mover • Tiro automático'}
             </div>
             <div style={{ fontSize: '18px', color: '#9ca3af', textAlign: 'center' }}>
-              Clique para iniciar o jogo
+              Toque para iniciar o jogo
             </div>
           </div>
         )}
@@ -805,21 +960,22 @@ const GhostBossGame = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            padding: '20px'
           }}>
-            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '24px', color: '#fbbf24' }}>PROMOÇÃO!</div>
-            <div style={{ fontSize: '20px', marginBottom: '32px', textAlign: 'center' }}>Escolha seu upgrade financeiro:</div>
+            <div style={{ fontSize: isMobile ? '32px' : '48px', fontWeight: 'bold', marginBottom: '24px', color: '#fbbf24' }}>PROMOÇÃO!</div>
+            <div style={{ fontSize: isMobile ? '16px' : '20px', marginBottom: '32px', textAlign: 'center' }}>Escolha seu upgrade financeiro:</div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '400px' }}>
               <button
                 onClick={() => selectUpgrade('fireRate')}
                 disabled={player.fireRate <= 100}
                 style={{
                   backgroundColor: player.fireRate <= 100 ? '#6b7280' : '#2563eb',
                   color: 'white',
-                  padding: '16px 32px',
+                  padding: isMobile ? '12px 24px' : '16px 32px',
                   borderRadius: '8px',
-                  fontSize: '18px',
+                  fontSize: isMobile ? '16px' : '18px',
                   border: 'none',
                   cursor: player.fireRate <= 100 ? 'not-allowed' : 'pointer',
                   transition: 'background-color 0.3s'
@@ -843,9 +999,9 @@ const GhostBossGame = () => {
                 style={{
                   backgroundColor: player.projectileCount >= 5 ? '#6b7280' : '#059669',
                   color: 'white',
-                  padding: '16px 32px',
+                  padding: isMobile ? '12px 24px' : '16px 32px',
                   borderRadius: '8px',
-                  fontSize: '18px',
+                  fontSize: isMobile ? '16px' : '18px',
                   border: 'none',
                   cursor: player.projectileCount >= 5 ? 'not-allowed' : 'pointer',
                   transition: 'background-color 0.3s'
@@ -868,9 +1024,9 @@ const GhostBossGame = () => {
                 style={{
                   backgroundColor: '#dc2626',
                   color: 'white',
-                  padding: '16px 32px',
+                  padding: isMobile ? '12px 24px' : '16px 32px',
                   borderRadius: '8px',
-                  fontSize: '18px',
+                  fontSize: isMobile ? '16px' : '18px',
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'background-color 0.3s'
@@ -897,7 +1053,7 @@ const GhostBossGame = () => {
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <div style={{ fontSize: '48px', fontWeight: 'bold' }}>PAUSADO</div>
+            <div style={{ fontSize: isMobile ? '32px' : '48px', fontWeight: 'bold' }}>PAUSADO</div>
           </div>
         )}
 
@@ -910,20 +1066,21 @@ const GhostBossGame = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            padding: '20px'
           }}>
-            <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '16px', color: '#ef4444' }}>FALÊNCIA!</div>
-            <div style={{ fontSize: '20px', marginBottom: '8px' }}>Capital Final: {score}</div>
-            <div style={{ fontSize: '18px', marginBottom: '8px', color: '#fbbf24' }}>Fase Alcançada: {phase}</div>
-            <div style={{ fontSize: '18px', marginBottom: '16px', color: '#10b981' }}>Nível Alcançado: {level}</div>
+            <div style={{ fontSize: isMobile ? '32px' : '48px', fontWeight: 'bold', marginBottom: '16px', color: '#ef4444' }}>FALÊNCIA!</div>
+            <div style={{ fontSize: isMobile ? '16px' : '20px', marginBottom: '8px' }}>Capital Final: {score}</div>
+            <div style={{ fontSize: isMobile ? '14px' : '18px', marginBottom: '8px', color: '#fbbf24' }}>Fase Alcançada: {phase}</div>
+            <div style={{ fontSize: isMobile ? '14px' : '18px', marginBottom: '16px', color: '#10b981' }}>Nível Alcançado: {level}</div>
             <button
               onClick={resetGame}
               style={{
                 backgroundColor: '#059669',
                 color: 'white',
-                padding: '12px 24px',
+                padding: isMobile ? '10px 20px' : '12px 24px',
                 borderRadius: '8px',
-                fontSize: '20px',
+                fontSize: isMobile ? '16px' : '20px',
                 border: 'none',
                 cursor: 'pointer'
               }}
@@ -940,10 +1097,10 @@ const GhostBossGame = () => {
       <div style={{
         marginTop: '16px',
         textAlign: 'center',
-        fontSize: '14px',
+        fontSize: isMobile ? '12px' : '14px',
         color: '#9ca3af'
       }}>
-        <p>Use WASD ou setas para mover • Tiro automático corporativo!</p>
+        <p>{isMobile ? 'Use os controles na tela para mover • Tiro automático corporativo!' : 'Use WASD ou setas para mover • Tiro automático corporativo!'}</p>
         <p>Derrote apenas o cartão-chefe para expandir os negócios!</p>
       </div>
 
@@ -951,8 +1108,10 @@ const GhostBossGame = () => {
       <div style={{
         marginTop: '8px',
         display: 'flex',
-        gap: '16px',
-        fontSize: '14px'
+        flexWrap: 'wrap',
+        gap: isMobile ? '8px' : '16px',
+        fontSize: isMobile ? '12px' : '14px',
+        justifyContent: 'center'
       }}>
         <span>Boletos: {ghosts.length}</span>
         <span>Cartão-Chefe: {boss.health}/{boss.maxHealth}</span>
@@ -961,6 +1120,9 @@ const GhostBossGame = () => {
         <span>Dano: {player.damage}</span>
         <span>Vel.Tiro: {player.fireRate}ms</span>
       </div>
+
+      {/* Controles Mobile */}
+      <MobileControls />
     </div>
   );
 };
