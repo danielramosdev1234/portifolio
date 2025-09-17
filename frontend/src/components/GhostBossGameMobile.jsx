@@ -84,6 +84,11 @@ const GhostBossGameMobile = () => {
 
   // Touch handlers
   const handleTouchStart = (e) => {
+    // Don't prevent default for buttons and overlays
+    if (gameState === 'levelUp' || gameState === 'gameOver' || e.target.tagName === 'BUTTON') {
+      return;
+    }
+
     e.preventDefault();
     if (gameState === 'instructions') {
       startGame();
@@ -95,20 +100,25 @@ const GhostBossGameMobile = () => {
   };
 
   const handleTouchMove = (e) => {
-    e.preventDefault();
     if (gameState !== 'playing') return;
+    e.preventDefault();
 
     const touch = e.touches[0];
     startMovement(touch.clientX, touch.clientY);
   };
 
   const handleTouchEnd = (e) => {
+    if (gameState !== 'playing') return;
     e.preventDefault();
     stopMovement();
   };
 
   // Mouse handlers (fallback)
   const handleMouseDown = (e) => {
+    if (gameState === 'levelUp' || gameState === 'gameOver' || e.target.tagName === 'BUTTON') {
+      return;
+    }
+
     if (gameState === 'instructions') {
       startGame();
       return;
@@ -122,7 +132,9 @@ const GhostBossGameMobile = () => {
   };
 
   const handleMouseUp = () => {
-    stopMovement();
+    if (gameState === 'playing') {
+      stopMovement();
+    }
   };
 
   // Function to add damage text
@@ -300,9 +312,6 @@ const GhostBossGameMobile = () => {
             .filter(p => p.y > 0 && p.y < gameHeight)
       );
 
-      // Collision detection and other game logic...
-      // (keeping the rest of the collision logic as is)
-
       // Player projectile collisions with ghosts
       setProjectiles(prev => {
         const remaining = [];
@@ -345,6 +354,61 @@ const GhostBossGameMobile = () => {
             }).filter(Boolean);
           });
           if (!hit) remaining.push(proj);
+        });
+        return remaining;
+      });
+
+      // Player projectile collisions with boss
+      setProjectiles(prev => {
+        const remaining = [];
+        prev.forEach(proj => {
+          if (Math.abs(boss.x - proj.x) < 35 && Math.abs(boss.y - proj.y) < 35) {
+            setBoss(prevBoss => {
+              const newHealth = Math.max(0, prevBoss.health - player.damage);
+
+              addDamageText(boss.x, boss.y, player.damage, 'damage');
+              addDamageText(boss.x, boss.y - 15, `${newHealth}/${prevBoss.maxHealth}`, 'health');
+
+              if (prevBoss.health > 0 && newHealth === 0) {
+                const bossExp = 100;
+                addDamageText(boss.x, boss.y - 30, `+${bossExp} EXP`, 'exp');
+                addDamageText(boss.x, boss.y - 45, 'BOSS KILLED!', 'kill');
+
+                setExperience(exp => {
+                  const newExp = exp + bossExp;
+                  if (newExp >= experienceToNext) {
+                    setGameState('levelUp');
+                    return 0;
+                  }
+                  return newExp;
+                });
+              }
+              return { ...prevBoss, health: newHealth };
+            });
+            setScore(s => s + 50);
+          } else {
+            remaining.push(proj);
+          }
+        });
+        return remaining;
+      });
+
+      // Boss projectile collisions with player
+      setBossProjectiles(prev => {
+        const remaining = [];
+        prev.forEach(proj => {
+          if (Math.abs(player.x - proj.x) < 25 && Math.abs(player.y - proj.y) < 25) {
+            setPlayer(prevPlayer => {
+              const newHealth = Math.max(0, prevPlayer.health - 10);
+              addDamageText(player.x, player.y, 10, 'damage');
+              if (newHealth <= 0) {
+                setGameState('gameOver');
+              }
+              return { ...prevPlayer, health: newHealth };
+            });
+          } else {
+            remaining.push(proj);
+          }
         });
         return remaining;
       });
@@ -773,22 +837,37 @@ const GhostBossGameMobile = () => {
 
         {/* Level up overlay */}
         {gameState === 'levelUp' && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.95)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.95)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              zIndex: 1000
+            }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px', color: '#fbbf24' }}>PROMOÇÃO!</div>
             <div style={{ fontSize: '16px', marginBottom: '20px', textAlign: 'center' }}>Escolha seu upgrade:</div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
               <button
                 onClick={() => selectUpgrade('fireRate')}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (player.fireRate > 100) {
+                    selectUpgrade('fireRate');
+                  }
+                }}
                 disabled={player.fireRate <= 100}
                 style={{
                   backgroundColor: player.fireRate <= 100 ? '#6b7280' : '#2563eb',
@@ -798,7 +877,8 @@ const GhostBossGameMobile = () => {
                   fontSize: '14px',
                   border: 'none',
                   cursor: player.fireRate <= 100 ? 'not-allowed' : 'pointer',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  minHeight: '60px'
                 }}
               >
                 ⚡ Agilidade Financeira
@@ -809,6 +889,14 @@ const GhostBossGameMobile = () => {
 
               <button
                 onClick={() => selectUpgrade('projectileCount')}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (player.projectileCount < 5) {
+                    selectUpgrade('projectileCount');
+                  }
+                }}
                 disabled={player.projectileCount >= 5}
                 style={{
                   backgroundColor: player.projectileCount >= 5 ? '#6b7280' : '#059669',
@@ -818,7 +906,8 @@ const GhostBossGameMobile = () => {
                   fontSize: '14px',
                   border: 'none',
                   cursor: player.projectileCount >= 5 ? 'not-allowed' : 'pointer',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  minHeight: '60px'
                 }}
               >
                 🎯 Múltiplas Rendas
@@ -829,6 +918,12 @@ const GhostBossGameMobile = () => {
 
               <button
                 onClick={() => selectUpgrade('damage')}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  selectUpgrade('damage');
+                }}
                 style={{
                   backgroundColor: '#dc2626',
                   color: 'white',
@@ -837,7 +932,8 @@ const GhostBossGameMobile = () => {
                   fontSize: '14px',
                   border: 'none',
                   cursor: 'pointer',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  minHeight: '60px'
                 }}
               >
                 💼 Poder de Negociação
@@ -865,23 +961,36 @@ const GhostBossGameMobile = () => {
 
         {/* Game over overlay */}
         {gameState === 'gameOver' && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.9)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.9)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              textAlign: 'center',
+              zIndex: 1000
+            }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '12px', color: '#ef4444' }}>FALÊNCIA!</div>
             <div style={{ fontSize: '16px', marginBottom: '6px' }}>Capital Final: {score}</div>
             <div style={{ fontSize: '14px', marginBottom: '6px', color: '#fbbf24' }}>Fase: {phase}</div>
             <div style={{ fontSize: '14px', marginBottom: '12px', color: '#10b981' }}>Nível: {level}</div>
             <button
               onClick={resetGame}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                resetGame();
+              }}
               style={{
                 backgroundColor: '#059669',
                 color: 'white',
@@ -889,7 +998,8 @@ const GhostBossGameMobile = () => {
                 borderRadius: '8px',
                 fontSize: '16px',
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minHeight: '50px'
               }}
             >
               NOVO NEGÓCIO
